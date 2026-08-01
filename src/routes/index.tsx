@@ -11,13 +11,15 @@ export const Route = createFileRoute("/")({
     dir: typeof search.dir === "string" ? search.dir : undefined,
     file: typeof search.file === "string" ? search.file : undefined,
     q: typeof search.q === "string" ? search.q : undefined,
-    filter: typeof search.filter === "string" && FILTER_VALUES.has(search.filter)
-      ? search.filter as LibrarySearch["filter"]
-      : "all",
-    view: typeof search.view === "string" && VIEW_VALUES.has(search.view)
-      ? search.view as LibrarySearch["view"]
-      : "list",
-    }),
+    filter:
+      typeof search.filter === "string" && FILTER_VALUES.has(search.filter)
+        ? (search.filter as LibrarySearch["filter"])
+        : "all",
+    view:
+      typeof search.view === "string" && VIEW_VALUES.has(search.view)
+        ? (search.view as LibrarySearch["view"])
+        : "list",
+  }),
   search: {
     middlewares: [stripSearchParams(SEARCH_DEFAULTS)],
   },

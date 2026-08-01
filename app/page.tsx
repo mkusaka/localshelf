@@ -15,10 +15,7 @@ import {
 
 import { Button } from "../components/ui/button";
 import { buttonVariants } from "../components/ui/button-variants";
-import {
-  Dialog,
-  DialogTitle,
-} from "../components/ui/dialog";
+import { Dialog, DialogTitle } from "../components/ui/dialog";
 import { Input } from "../components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Toggle } from "../components/ui/toggle";
@@ -29,10 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/ui/select";
-import {
-  ToggleGroup,
-  ToggleGroupItem,
-} from "../components/ui/toggle-group";
+import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group";
 import { cn } from "../lib/utils";
 
 type FileKind = "image" | "video" | "audio" | "document" | "other";
@@ -82,13 +76,7 @@ type DirectoryPickerWindow = Window & {
   showDirectoryPicker?: (options?: {
     id?: string;
     mode?: "read" | "readwrite";
-    startIn?:
-      | "desktop"
-      | "documents"
-      | "downloads"
-      | "music"
-      | "pictures"
-      | "videos";
+    startIn?: "desktop" | "documents" | "downloads" | "music" | "pictures" | "videos";
   }) => Promise<FileSystemDirectoryHandle>;
 };
 
@@ -97,13 +85,45 @@ type DirectoryHandleWithValues = FileSystemDirectoryHandle & {
 };
 
 const TEXT_EXTENSIONS = new Set([
-  "c", "cpp", "css", "csv", "go", "html", "js", "json", "jsx", "log",
-  "md", "mjs", "py", "rb", "rs", "sh", "sql", "ts", "tsx", "txt", "xml",
-  "yaml", "yml",
+  "c",
+  "cpp",
+  "css",
+  "csv",
+  "go",
+  "html",
+  "js",
+  "json",
+  "jsx",
+  "log",
+  "md",
+  "mjs",
+  "py",
+  "rb",
+  "rs",
+  "sh",
+  "sql",
+  "ts",
+  "tsx",
+  "txt",
+  "xml",
+  "yaml",
+  "yml",
 ]);
 const IMAGE_EXTENSIONS = new Set([
-  "avif", "bmp", "gif", "heic", "heif", "ico", "jpeg", "jpg", "jxl",
-  "png", "svg", "tif", "tiff", "webp",
+  "avif",
+  "bmp",
+  "gif",
+  "heic",
+  "heif",
+  "ico",
+  "jpeg",
+  "jpg",
+  "jxl",
+  "png",
+  "svg",
+  "tif",
+  "tiff",
+  "webp",
 ]);
 const PDF_EXTENSIONS = new Set(["pdf"]);
 const VIDEO_EXTENSIONS = new Set(["avi", "m4v", "mkv", "mov", "mp4", "webm"]);
@@ -224,7 +244,9 @@ function LibrarySelector({
         aria-label="Select root folder"
       >
         <SelectTrigger className="library-selector">
-          <span className="folder-glyph" aria-hidden="true">▰</span>
+          <span className="folder-glyph" aria-hidden="true">
+            ▰
+          </span>
           <span className={`library-selector-copy ${subtitle ? "has-subtitle" : ""}`}>
             <SelectValue className="library-selector-name">{selectedName}</SelectValue>
             {subtitle && <small>{subtitle}</small>}
@@ -239,13 +261,22 @@ function LibrarySelector({
           ))}
         </SelectContent>
       </Select>
-      {onRemove && <Button variant="ghost" className="library-remove-button" onPress={() => onRemove(selectedId)} aria-label={`Remove ${selectedName} from library`}>Remove from library</Button>}
+      {onRemove && (
+        <Button
+          variant="ghost"
+          className="library-remove-button"
+          onPress={() => onRemove(selectedId)}
+          aria-label={`Remove ${selectedName} from library`}
+        >
+          Remove from library
+        </Button>
+      )}
     </div>
   );
 }
 
 function getExtension(name: string): string {
-  return name.includes(".") ? name.split(".").pop()?.toLowerCase() ?? "" : "";
+  return name.includes(".") ? (name.split(".").pop()?.toLowerCase() ?? "") : "";
 }
 
 function getFileKind(name: string, mimeType = ""): FileKind {
@@ -254,15 +285,20 @@ function getFileKind(name: string, mimeType = ""): FileKind {
   if (mimeType.startsWith("video/") || VIDEO_EXTENSIONS.has(extension)) return "video";
   if (mimeType.startsWith("audio/") || AUDIO_EXTENSIONS.has(extension)) return "audio";
   if (
-    mimeType === "application/pdf" || PDF_EXTENSIONS.has(extension) || mimeType.startsWith("text/") ||
+    mimeType === "application/pdf" ||
+    PDF_EXTENSIONS.has(extension) ||
+    mimeType.startsWith("text/") ||
     TEXT_EXTENSIONS.has(extension) ||
     ["doc", "docx", "ppt", "pptx", "xls", "xlsx"].includes(extension)
-  ) return "document";
+  )
+    return "document";
   return "other";
 }
 
 function getKindLabel(kind: FileKind): string {
-  return { image: "Image", video: "Video", audio: "Audio", document: "Document", other: "Other" }[kind];
+  return { image: "Image", video: "Video", audio: "Audio", document: "Document", other: "Other" }[
+    kind
+  ];
 }
 
 function getKindAbbreviation(kind: FileKind): string {
@@ -290,7 +326,10 @@ function buildFolderTree(files: LocalFile[]): FolderNode[] {
 
     let parent = root;
     for (const [index, name] of directoryPath.split("/").entries()) {
-      const path = directoryPath.split("/").slice(0, index + 1).join("/");
+      const path = directoryPath
+        .split("/")
+        .slice(0, index + 1)
+        .join("/");
       let node = parent.children.find((child) => child.name === name);
       if (!node) {
         node = { name, path, count: 0, children: [] };
@@ -301,9 +340,10 @@ function buildFolderTree(files: LocalFile[]): FolderNode[] {
     }
   }
 
-  const sortNodes = (nodes: FolderNode[]): FolderNode[] => nodes
-    .sort((a, b) => a.name.localeCompare(b.name, "en"))
-    .map((node) => ({ ...node, children: sortNodes(node.children) }));
+  const sortNodes = (nodes: FolderNode[]): FolderNode[] =>
+    nodes
+      .sort((a, b) => a.name.localeCompare(b.name, "en"))
+      .map((node) => ({ ...node, children: sortNodes(node.children) }));
 
   return sortNodes(root.children);
 }
@@ -325,7 +365,18 @@ function FolderTree({
   selectedPath: string;
   onSelect: (path: string) => void;
 }) {
-  return <ul className="folder-tree">{nodes.map((node) => <FolderTreeNode key={node.path} node={node} selectedPath={selectedPath} onSelect={onSelect} />)}</ul>;
+  return (
+    <ul className="folder-tree">
+      {nodes.map((node) => (
+        <FolderTreeNode
+          key={node.path}
+          node={node}
+          selectedPath={selectedPath}
+          onSelect={onSelect}
+        />
+      ))}
+    </ul>
+  );
 }
 
 function FolderTreeNode({
@@ -342,10 +393,36 @@ function FolderTreeNode({
   return (
     <li className="folder-tree-item">
       <div className="folder-tree-row">
-        {node.children.length > 0 ? <Button variant="ghost" size="icon-xs" className="folder-toggle" onPress={() => setIsExpanded((expanded) => !expanded)} aria-label={`${isExpanded ? "Collapse" : "Expand"} ${node.name}`} aria-expanded={isExpanded}>{isExpanded ? "⌄" : "›"}</Button> : <span className="folder-toggle-spacer" aria-hidden="true" />}
-        <Button variant="ghost" className={`folder-tree-button ${selectedPath === node.path ? "is-selected" : ""}`} onPress={() => onSelect(node.path)} aria-pressed={selectedPath === node.path}><span className="folder-glyph folder-glyph-small" aria-hidden="true">▱</span><span className="folder-name">{node.name}</span><span className="item-count">{node.count}</span></Button>
+        {node.children.length > 0 ? (
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            className="folder-toggle"
+            onPress={() => setIsExpanded((expanded) => !expanded)}
+            aria-label={`${isExpanded ? "Collapse" : "Expand"} ${node.name}`}
+            aria-expanded={isExpanded}
+          >
+            {isExpanded ? "⌄" : "›"}
+          </Button>
+        ) : (
+          <span className="folder-toggle-spacer" aria-hidden="true" />
+        )}
+        <Button
+          variant="ghost"
+          className={`folder-tree-button ${selectedPath === node.path ? "is-selected" : ""}`}
+          onPress={() => onSelect(node.path)}
+          aria-pressed={selectedPath === node.path}
+        >
+          <span className="folder-glyph folder-glyph-small" aria-hidden="true">
+            ▱
+          </span>
+          <span className="folder-name">{node.name}</span>
+          <span className="item-count">{node.count}</span>
+        </Button>
       </div>
-      {isExpanded && node.children.length > 0 && <FolderTree nodes={node.children} selectedPath={selectedPath} onSelect={onSelect} />}
+      {isExpanded && node.children.length > 0 && (
+        <FolderTree nodes={node.children} selectedPath={selectedPath} onSelect={onSelect} />
+      )}
     </li>
   );
 }
@@ -381,11 +458,26 @@ function FilePreviewTile({
 
   return (
     <li className="preview-tile-item">
-      <Button variant="ghost" className={`preview-tile ${isSelected ? "is-selected" : ""}`} onPress={onSelect}>
+      <Button
+        variant="ghost"
+        className={`preview-tile ${isSelected ? "is-selected" : ""}`}
+        onPress={onSelect}
+      >
         <span className="preview-tile-media">
-          {previewUrl && file.kind === "image" ? <img src={previewUrl} alt="" loading="lazy" /> : previewUrl && file.kind === "video" ? <video src={previewUrl} muted playsInline preload="metadata" /> : <span className={`preview-tile-type preview-tile-type-${file.kind}`}>{file.extension === "pdf" ? "PDF" : getKindAbbreviation(file.kind)}</span>}
+          {previewUrl && file.kind === "image" ? (
+            <img src={previewUrl} alt="" loading="lazy" />
+          ) : previewUrl && file.kind === "video" ? (
+            <video src={previewUrl} muted playsInline preload="metadata" />
+          ) : (
+            <span className={`preview-tile-type preview-tile-type-${file.kind}`}>
+              {file.extension === "pdf" ? "PDF" : getKindAbbreviation(file.kind)}
+            </span>
+          )}
         </span>
-        <span className="preview-tile-copy"><strong>{file.name}</strong><span>{file.path}</span></span>
+        <span className="preview-tile-copy">
+          <strong>{file.name}</strong>
+          <span>{file.path}</span>
+        </span>
       </Button>
     </li>
   );
@@ -429,9 +521,9 @@ function fileFromFallback(file: File): LocalFile {
 }
 
 function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(() => (
-    typeof window !== "undefined" && window.matchMedia(query).matches
-  ));
+  const [matches, setMatches] = useState(
+    () => typeof window !== "undefined" && window.matchMedia(query).matches,
+  );
 
   useEffect(() => {
     const mediaQuery = window.matchMedia(query);
@@ -548,21 +640,82 @@ function PreviewContent({
     <>
       <div className="preview-heading">
         <div>
-          <span className={`file-type file-type-${previewKind}`}>{getKindAbbreviation(previewKind)}</span>
+          <span className={`file-type file-type-${previewKind}`}>
+            {getKindAbbreviation(previewKind)}
+          </span>
           <p className="eyebrow">PREVIEW</p>
         </div>
         <div className="preview-actions">
-          {previewUrl && <a className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "download-button")} href={previewUrl} download={selectedFile.name} aria-label={`Download ${selectedFile.name}`}>↓</a>}
-          <Button variant="ghost" size="icon" className="download-button clear-button" onPress={onClear} aria-label="Clear file selection">×</Button>
+          {previewUrl && (
+            <a
+              className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "download-button")}
+              href={previewUrl}
+              download={selectedFile.name}
+              aria-label={`Download ${selectedFile.name}`}
+            >
+              ↓
+            </a>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="download-button clear-button"
+            onPress={onClear}
+            aria-label="Clear file selection"
+          >
+            ×
+          </Button>
         </div>
       </div>
       <div className={`preview-canvas preview-${previewKind}`}>
-        {previewLoading ? <div className="preview-placeholder">Loading preview…</div> : previewKind === "image" && previewUrl ? <img src={previewUrl} alt={selectedFile.name} /> : previewKind === "video" && previewUrl ? <video src={previewUrl} controls playsInline /> : previewKind === "audio" && previewUrl ? <div className="audio-preview"><span className="audio-disc" aria-hidden="true">◖</span><audio src={previewUrl} controls /></div> : isPdfPreview && previewUrl ? <object data={previewUrl} type="application/pdf" aria-label={`PDF preview of ${selectedFile.name}`}><div className="preview-fallback"><span>This browser cannot embed PDFs.</span><a href={previewUrl} target="_blank" rel="noreferrer">Open PDF</a></div></object> : isTextPreview ? <pre>{previewText}</pre> : <div className="preview-placeholder"><span className="large-file-type">{getKindAbbreviation(previewKind)}</span><span>Preview is not available for this file type.</span></div>}
+        {previewLoading ? (
+          <div className="preview-placeholder">Loading preview…</div>
+        ) : previewKind === "image" && previewUrl ? (
+          <img src={previewUrl} alt={selectedFile.name} />
+        ) : previewKind === "video" && previewUrl ? (
+          <video src={previewUrl} controls playsInline />
+        ) : previewKind === "audio" && previewUrl ? (
+          <div className="audio-preview">
+            <span className="audio-disc" aria-hidden="true">
+              ◖
+            </span>
+            <audio src={previewUrl} controls />
+          </div>
+        ) : isPdfPreview && previewUrl ? (
+          <object
+            data={previewUrl}
+            type="application/pdf"
+            aria-label={`PDF preview of ${selectedFile.name}`}
+          >
+            <div className="preview-fallback">
+              <span>This browser cannot embed PDFs.</span>
+              <a href={previewUrl} target="_blank" rel="noreferrer">
+                Open PDF
+              </a>
+            </div>
+          </object>
+        ) : isTextPreview ? (
+          <pre>{previewText}</pre>
+        ) : (
+          <div className="preview-placeholder">
+            <span className="large-file-type">{getKindAbbreviation(previewKind)}</span>
+            <span>Preview is not available for this file type.</span>
+          </div>
+        )}
       </div>
       <div className="preview-details">
         {title}
         <p>{selectedFile.path}</p>
-        <dl><div><dt>Type</dt><dd>{getKindLabel(previewKind)}</dd></div><div><dt>Size</dt><dd>{totalSize}</dd></div></dl>
+        <dl>
+          <div>
+            <dt>Type</dt>
+            <dd>{getKindLabel(previewKind)}</dd>
+          </div>
+          <div>
+            <dt>Size</dt>
+            <dd>{totalSize}</dd>
+          </div>
+        </dl>
       </div>
     </>
   );
@@ -579,7 +732,8 @@ export default function Home({ search, updateSearch, resetSearch }: HomeProps) {
   const [previewFile, setPreviewFile] = useState<File | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const isMobile = useMediaQuery("(max-width: 700px)");
-  const { panelWidths, resizing, beginResize, handleResizeKeyDown, resetPanelWidth } = useResizablePanels();
+  const { panelWidths, resizing, beginResize, handleResizeKeyDown, resetPanelWidth } =
+    useResizablePanels();
 
   const selectedId = search.file ?? null;
   const filter = search.filter;
@@ -605,7 +759,12 @@ export default function Home({ search, updateSearch, resetSearch }: HomeProps) {
   const files = activeLibrary?.files ?? EMPTY_FILES;
   const rootName = activeLibrary?.name ?? activeRootId;
   const rootLibraries = useMemo(
-    () => libraries.length > 0 ? libraries : rootName ? [{ id: rootName, name: rootName, files: [] }] : [],
+    () =>
+      libraries.length > 0
+        ? libraries
+        : rootName
+          ? [{ id: rootName, name: rootName, files: [] }]
+          : [],
     [libraries, rootName],
   );
   const hasLibrary = libraries.length > 0 || Boolean(activeRootId);
@@ -616,9 +775,12 @@ export default function Home({ search, updateSearch, resetSearch }: HomeProps) {
   );
 
   const activeFiles = useMemo(
-    () => activeDirectory
-      ? files.filter((file) => file.path === activeDirectory || file.path.startsWith(`${activeDirectory}/`))
-      : files,
+    () =>
+      activeDirectory
+        ? files.filter(
+            (file) => file.path === activeDirectory || file.path.startsWith(`${activeDirectory}/`),
+          )
+        : files,
     [files, activeDirectory],
   );
   const filterCounts = useMemo<FilterCounts>(() => {
@@ -639,7 +801,10 @@ export default function Home({ search, updateSearch, resetSearch }: HomeProps) {
     return activeFiles
       .filter((file) => {
         const matchesKind = filter === "all" || file.kind === filter;
-        const matchesQuery = !normalizedQuery || file.name.toLowerCase().includes(normalizedQuery) || file.path.toLowerCase().includes(normalizedQuery);
+        const matchesQuery =
+          !normalizedQuery ||
+          file.name.toLowerCase().includes(normalizedQuery) ||
+          file.path.toLowerCase().includes(normalizedQuery);
         return matchesKind && matchesQuery;
       })
       .sort((a, b) => a.path.localeCompare(b.path, "ja"));
@@ -656,20 +821,34 @@ export default function Home({ search, updateSearch, resetSearch }: HomeProps) {
     }
     setIsLoading(true);
     try {
-      const directory = await picker({ id: "localshelf-library", mode: "read", startIn: "downloads" });
+      const directory = await picker({
+        id: "localshelf-library",
+        mode: "read",
+        startIn: "downloads",
+      });
       const nextFiles = await scanDirectory(directory);
       nextFiles.sort((a, b) => a.path.localeCompare(b.path, "ja"));
       const nextLibrary = { id: directory.name, name: directory.name, files: nextFiles };
       setLibraries((currentLibraries) => {
         const existing = currentLibraries.some((library) => library.id === nextLibrary.id);
         return existing
-          ? currentLibraries.map((library) => library.id === nextLibrary.id ? nextLibrary : library)
+          ? currentLibraries.map((library) =>
+              library.id === nextLibrary.id ? nextLibrary : library,
+            )
           : [...currentLibraries, nextLibrary];
       });
-      updateSearch({ folder: directory.name, dir: undefined, file: undefined, filter: "all", q: undefined });
+      updateSearch({
+        folder: directory.name,
+        dir: undefined,
+        file: undefined,
+        filter: "all",
+        q: undefined,
+      });
     } catch (caughtError) {
       if (caughtError instanceof DOMException && caughtError.name === "AbortError") {
-        setError("Folder selection was canceled or blocked by the browser. Try a regular subfolder.");
+        setError(
+          "Folder selection was canceled or blocked by the browser. Try a regular subfolder.",
+        );
       } else {
         setError("We could not read this folder. Please try another one.");
       }
@@ -686,10 +865,16 @@ export default function Home({ search, updateSearch, resetSearch }: HomeProps) {
     setLibraries((currentLibraries) => {
       const existing = currentLibraries.some((library) => library.id === nextLibrary.id);
       return existing
-        ? currentLibraries.map((library) => library.id === nextLibrary.id ? nextLibrary : library)
+        ? currentLibraries.map((library) => (library.id === nextLibrary.id ? nextLibrary : library))
         : [...currentLibraries, nextLibrary];
     });
-    updateSearch({ folder: nextRootName, dir: undefined, file: undefined, filter: "all", q: undefined });
+    updateSearch({
+      folder: nextRootName,
+      dir: undefined,
+      file: undefined,
+      filter: "all",
+      q: undefined,
+    });
     event.target.value = "";
   };
 
@@ -711,7 +896,13 @@ export default function Home({ search, updateSearch, resetSearch }: HomeProps) {
       return;
     }
     if (id === activeRootId) {
-      updateSearch({ folder: nextLibraries[0].id, dir: undefined, file: undefined, q: undefined, filter: "all" });
+      updateSearch({
+        folder: nextLibraries[0].id,
+        dir: undefined,
+        file: undefined,
+        q: undefined,
+        filter: "all",
+      });
     }
   };
 
@@ -729,7 +920,9 @@ export default function Home({ search, updateSearch, resetSearch }: HomeProps) {
       setPreviewText("");
       setPreviewFile(null);
       setPreviewLoading(false);
-      return () => { active = false; };
+      return () => {
+        active = false;
+      };
     }
 
     const loadPreview = async () => {
@@ -748,7 +941,8 @@ export default function Home({ search, updateSearch, resetSearch }: HomeProps) {
         setPreviewUrl(objectUrl);
 
         if (
-          resolvedKind === "document" && selectedFile.extension !== "pdf" &&
+          resolvedKind === "document" &&
+          selectedFile.extension !== "pdf" &&
           (TEXT_EXTENSIONS.has(selectedFile.extension) || file.type.startsWith("text/"))
         ) {
           const text = (await file.text()).slice(0, 16000);
@@ -779,12 +973,43 @@ export default function Home({ search, updateSearch, resetSearch }: HomeProps) {
 
   return (
     <main className="app-shell">
-      <input ref={(element) => { fallbackInputRef.current = element; element?.setAttribute("webkitdirectory", ""); }} className="visually-hidden" type="file" multiple onChange={handleFallbackChange} aria-label="Choose a folder" />
+      <input
+        ref={(element) => {
+          fallbackInputRef.current = element;
+          element?.setAttribute("webkitdirectory", "");
+        }}
+        className="visually-hidden"
+        type="file"
+        multiple
+        onChange={handleFallbackChange}
+        aria-label="Choose a folder"
+      />
       <header className="topbar">
-        <Button variant="ghost" className="brand-lockup brand-link" onPress={resetLibrary} aria-label="Return to LocalShelf home"><span className="brand-mark" aria-hidden="true">L</span><span className="brand-name">LocalShelf</span><span className="brand-version">LOCAL VIEWER</span></Button>
+        <Button
+          variant="ghost"
+          className="brand-lockup brand-link"
+          onPress={resetLibrary}
+          aria-label="Return to LocalShelf home"
+        >
+          <span className="brand-mark" aria-hidden="true">
+            L
+          </span>
+          <span className="brand-name">LocalShelf</span>
+          <span className="brand-version">LOCAL VIEWER</span>
+        </Button>
         <div className="topbar-actions">
-          <span className="privacy-note"><span className="status-dot" aria-hidden="true" />Files stay on this device</span>
-          <Button className="button button-primary button-small" onPress={() => void openFolder()} isDisabled={isLoading}><span aria-hidden="true">＋</span>{isLoading ? "Loading…" : "Open folder"}</Button>
+          <span className="privacy-note">
+            <span className="status-dot" aria-hidden="true" />
+            Files stay on this device
+          </span>
+          <Button
+            className="button button-primary button-small"
+            onPress={() => void openFolder()}
+            isDisabled={isLoading}
+          >
+            <span aria-hidden="true">＋</span>
+            {isLoading ? "Loading…" : "Open folder"}
+          </Button>
         </div>
       </header>
 
@@ -792,70 +1017,331 @@ export default function Home({ search, updateSearch, resetSearch }: HomeProps) {
         <section className="empty-landing" aria-labelledby="empty-title">
           <div className="landing-copy">
             <p className="eyebrow">YOUR PRIVATE FILE SHELF</p>
-            <h1 id="empty-title">Your files,<br />all in one shelf.</h1>
-            <p className="landing-description">Browse images, video, audio, documents, and PDFs directly in your browser. Nothing is uploaded, and your files stay on this device.</p>
-            <Button className="button button-primary button-large" onPress={() => void openFolder()} isDisabled={isLoading}><span className="button-icon" aria-hidden="true">↗</span>{isLoading ? "Loading folder…" : "Choose your first folder"}</Button>
+            <h1 id="empty-title">
+              Your files,
+              <br />
+              all in one shelf.
+            </h1>
+            <p className="landing-description">
+              Browse images, video, audio, documents, and PDFs directly in your browser. Nothing is
+              uploaded, and your files stay on this device.
+            </p>
+            <Button
+              className="button button-primary button-large"
+              onPress={() => void openFolder()}
+              isDisabled={isLoading}
+            >
+              <span className="button-icon" aria-hidden="true">
+                ↗
+              </span>
+              {isLoading ? "Loading folder…" : "Choose your first folder"}
+            </Button>
             <p className="support-note">Chrome / Edge recommended · Read-only access</p>
-            {error && <p className="error-message" role="alert">{error}</p>}
+            {error && (
+              <p className="error-message" role="alert">
+                {error}
+              </p>
+            )}
           </div>
           <div className="landing-art" aria-hidden="true">
-            <div className="art-glow" /><div className="shelf-card shelf-card-back"><span className="art-label">ARCHIVE</span><span className="art-line art-line-short" /><span className="art-line" /></div>
-            <div className="shelf-card shelf-card-front"><span className="art-folder">◒</span><strong>your files</strong><span className="art-caption">stays on your device</span></div>
-            <div className="art-sticker">PRIVATE<br />BY DEFAULT</div>
+            <div className="art-glow" />
+            <div className="shelf-card shelf-card-back">
+              <span className="art-label">ARCHIVE</span>
+              <span className="art-line art-line-short" />
+              <span className="art-line" />
+            </div>
+            <div className="shelf-card shelf-card-front">
+              <span className="art-folder">◒</span>
+              <strong>your files</strong>
+              <span className="art-caption">stays on your device</span>
+            </div>
+            <div className="art-sticker">
+              PRIVATE
+              <br />
+              BY DEFAULT
+            </div>
           </div>
         </section>
       ) : (
         <section className="workspace" style={workspaceStyle} aria-label="Local file workspace">
           <aside className="sidebar">
-            <div className="sidebar-heading"><span className="sidebar-label">LIBRARY</span><Button variant="ghost" size="icon" className="icon-button" onPress={() => void openFolder()} aria-label="Open another folder">＋</Button></div>
-            <LibrarySelector libraries={rootLibraries} selectedId={activeRootId} count={files.length} onSelect={selectRoot} onRemove={removeRoot} />
-            {folderTree.length > 0 && <div className="sidebar-section folder-section"><span className="sidebar-label">FOLDERS</span><FolderTree nodes={folderTree} selectedPath={activeDirectory} onSelect={(path) => updateSearch({ dir: path, file: undefined, q: undefined, filter: "all" })} /></div>}
-            <div className="sidebar-section file-type-section"><span className="sidebar-label">FILTER BY TYPE</span><FileTypeFilters filter={filter} counts={filterCounts} onSelect={(value) => updateSearch({ filter: value })} className="sidebar-filter-pills" /></div>
-            <div className="sidebar-footer"><span className="status-dot" aria-hidden="true" />Safe local preview</div>
+            <div className="sidebar-heading">
+              <span className="sidebar-label">LIBRARY</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="icon-button"
+                onPress={() => void openFolder()}
+                aria-label="Open another folder"
+              >
+                ＋
+              </Button>
+            </div>
+            <LibrarySelector
+              libraries={rootLibraries}
+              selectedId={activeRootId}
+              count={files.length}
+              onSelect={selectRoot}
+              onRemove={removeRoot}
+            />
+            {folderTree.length > 0 && (
+              <div className="sidebar-section folder-section">
+                <span className="sidebar-label">FOLDERS</span>
+                <FolderTree
+                  nodes={folderTree}
+                  selectedPath={activeDirectory}
+                  onSelect={(path) =>
+                    updateSearch({ dir: path, file: undefined, q: undefined, filter: "all" })
+                  }
+                />
+              </div>
+            )}
+            <div className="sidebar-section file-type-section">
+              <span className="sidebar-label">FILTER BY TYPE</span>
+              <FileTypeFilters
+                filter={filter}
+                counts={filterCounts}
+                onSelect={(value) => updateSearch({ filter: value })}
+                className="sidebar-filter-pills"
+              />
+            </div>
+            <div className="sidebar-footer">
+              <span className="status-dot" aria-hidden="true" />
+              Safe local preview
+            </div>
           </aside>
 
-          <ResizeHandle side="sidebar" width={panelWidths.sidebar} isActive={resizing === "sidebar"} onPointerDown={(event) => beginResize("sidebar", event)} onKeyDown={(event) => handleResizeKeyDown("sidebar", event)} onDoubleClick={() => resetPanelWidth("sidebar")} />
+          <ResizeHandle
+            side="sidebar"
+            width={panelWidths.sidebar}
+            isActive={resizing === "sidebar"}
+            onPointerDown={(event) => beginResize("sidebar", event)}
+            onKeyDown={(event) => handleResizeKeyDown("sidebar", event)}
+            onDoubleClick={() => resetPanelWidth("sidebar")}
+          />
 
           <div className="file-area">
-            <div className="mobile-library-nav"><div className="mobile-library-heading"><LibrarySelector libraries={rootLibraries} selectedId={activeRootId} count={files.length} subtitle={activeDirectory || "All folders"} onSelect={selectRoot} onRemove={removeRoot} className="mobile-library-root" /><Button variant="ghost" size="icon" className="icon-button" onPress={() => void openFolder()} aria-label="Open another folder">＋</Button></div>{mobileFolderNodes.length > 0 && <div className="mobile-folder-strip">{mobileFolderNodes.map((node) => <Button variant="ghost" className={`mobile-folder-chip ${activeDirectory === node.path ? "is-selected" : ""}`} key={node.path} onPress={() => selectFolder(node.path)}><span aria-hidden="true">▱</span><span>{node.path}</span></Button>)}</div>}</div>
-            <div className="content-header"><div><p className="eyebrow">{activeDirectory || rootName || "LOCAL LIBRARY"}</p><h1>{query ? `Files matching “${query}”` : activeDirectory ? activeDirectory.split("/").pop() : "Files"}</h1></div><div className="view-meta"><span>{filteredFiles.length} / {activeFiles.length} files</span><Tabs className="view-tabs" selectedKey={view} onSelectionChange={(key) => { if (key === "list" || key === "preview") updateSearch({ view: key }); }}><TabsList className="view-tabs-list" aria-label="File view"><TabsTrigger className="view-button" id="list" aria-label="List view">☷</TabsTrigger><TabsTrigger className="view-button" id="preview" aria-label="Preview grid">▦</TabsTrigger></TabsList></Tabs></div></div>
-            <div className="toolbar"><label className="search-box"><span aria-hidden="true">⌕</span><Input ref={searchInputRef} type="search" value={query} onChange={(event) => updateSearch({ q: event.currentTarget.value || undefined })} placeholder="Search files and folders" aria-label="Search files and folders" /><kbd>⌘ K</kbd></label><FileTypeFilters filter={filter} counts={filterCounts} onSelect={(value) => updateSearch({ filter: value })} className="mobile-filter-pills" /></div>
-            {error && <p className="error-message error-inline" role="alert">{error}</p>}
-            <ul className={`file-list ${view === "preview" ? "file-list-preview" : ""}`} aria-label={view === "preview" ? "Preview grid" : "File list"}>
+            <div className="mobile-library-nav">
+              <div className="mobile-library-heading">
+                <LibrarySelector
+                  libraries={rootLibraries}
+                  selectedId={activeRootId}
+                  count={files.length}
+                  subtitle={activeDirectory || "All folders"}
+                  onSelect={selectRoot}
+                  onRemove={removeRoot}
+                  className="mobile-library-root"
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="icon-button"
+                  onPress={() => void openFolder()}
+                  aria-label="Open another folder"
+                >
+                  ＋
+                </Button>
+              </div>
+              {mobileFolderNodes.length > 0 && (
+                <div className="mobile-folder-strip">
+                  {mobileFolderNodes.map((node) => (
+                    <Button
+                      variant="ghost"
+                      className={`mobile-folder-chip ${activeDirectory === node.path ? "is-selected" : ""}`}
+                      key={node.path}
+                      onPress={() => selectFolder(node.path)}
+                    >
+                      <span aria-hidden="true">▱</span>
+                      <span>{node.path}</span>
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="content-header">
+              <div>
+                <p className="eyebrow">{activeDirectory || rootName || "LOCAL LIBRARY"}</p>
+                <h1>
+                  {query
+                    ? `Files matching “${query}”`
+                    : activeDirectory
+                      ? activeDirectory.split("/").pop()
+                      : "Files"}
+                </h1>
+              </div>
+              <div className="view-meta">
+                <span>
+                  {filteredFiles.length} / {activeFiles.length} files
+                </span>
+                <Tabs
+                  className="view-tabs"
+                  selectedKey={view}
+                  onSelectionChange={(key) => {
+                    if (key === "list" || key === "preview") updateSearch({ view: key });
+                  }}
+                >
+                  <TabsList className="view-tabs-list" aria-label="File view">
+                    <TabsTrigger className="view-button" id="list" aria-label="List view">
+                      ☷
+                    </TabsTrigger>
+                    <TabsTrigger className="view-button" id="preview" aria-label="Preview grid">
+                      ▦
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+            </div>
+            <div className="toolbar">
+              <label className="search-box">
+                <span aria-hidden="true">⌕</span>
+                <Input
+                  ref={searchInputRef}
+                  type="search"
+                  value={query}
+                  onChange={(event) => updateSearch({ q: event.currentTarget.value || undefined })}
+                  placeholder="Search files and folders"
+                  aria-label="Search files and folders"
+                />
+                <kbd>⌘ K</kbd>
+              </label>
+              <FileTypeFilters
+                filter={filter}
+                counts={filterCounts}
+                onSelect={(value) => updateSearch({ filter: value })}
+                className="mobile-filter-pills"
+              />
+            </div>
+            {error && (
+              <p className="error-message error-inline" role="alert">
+                {error}
+              </p>
+            )}
+            <ul
+              className={`file-list ${view === "preview" ? "file-list-preview" : ""}`}
+              aria-label={view === "preview" ? "Preview grid" : "File list"}
+            >
               {activeFiles.length === 0 ? (
                 <li className="file-list-message">
-                  <div className="no-results"><span className="no-results-icon" aria-hidden="true">⌂</span><strong>No files found</strong><span>This folder does not contain any files yet.</span></div>
+                  <div className="no-results">
+                    <span className="no-results-icon" aria-hidden="true">
+                      ⌂
+                    </span>
+                    <strong>No files found</strong>
+                    <span>This folder does not contain any files yet.</span>
+                  </div>
                 </li>
               ) : filteredFiles.length > 0 ? (
-                view === "preview" ? filteredFiles.map((file) => (
-                  <FilePreviewTile key={file.id} file={file} isSelected={selectedId === file.id} onSelect={() => updateSearch({ file: selectedId === file.id ? undefined : file.id })} />
-                )) : filteredFiles.map((file) => (
-                  <li className="file-list-item" key={file.id}>
-                    <Toggle className={`file-row ${selectedId === file.id ? "is-selected" : ""}`} isSelected={selectedId === file.id} onChange={(isSelected) => updateSearch({ file: isSelected ? file.id : undefined })}>
-                      <span className={`file-type file-type-${file.kind}`}>{getKindAbbreviation(file.kind)}</span>
-                      <span className="file-row-copy"><strong>{file.name}</strong><span>{file.path.includes("/") ? file.path.slice(0, file.path.lastIndexOf("/")) : "Root"}</span></span>
-                      <span className="file-row-kind">{getKindLabel(file.kind)}</span>
-                      <span className="file-row-chevron" aria-hidden="true">›</span>
-                    </Toggle>
-                  </li>
-                ))
+                view === "preview" ? (
+                  filteredFiles.map((file) => (
+                    <FilePreviewTile
+                      key={file.id}
+                      file={file}
+                      isSelected={selectedId === file.id}
+                      onSelect={() =>
+                        updateSearch({ file: selectedId === file.id ? undefined : file.id })
+                      }
+                    />
+                  ))
+                ) : (
+                  filteredFiles.map((file) => (
+                    <li className="file-list-item" key={file.id}>
+                      <Toggle
+                        className={`file-row ${selectedId === file.id ? "is-selected" : ""}`}
+                        isSelected={selectedId === file.id}
+                        onChange={(isSelected) =>
+                          updateSearch({ file: isSelected ? file.id : undefined })
+                        }
+                      >
+                        <span className={`file-type file-type-${file.kind}`}>
+                          {getKindAbbreviation(file.kind)}
+                        </span>
+                        <span className="file-row-copy">
+                          <strong>{file.name}</strong>
+                          <span>
+                            {file.path.includes("/")
+                              ? file.path.slice(0, file.path.lastIndexOf("/"))
+                              : "Root"}
+                          </span>
+                        </span>
+                        <span className="file-row-kind">{getKindLabel(file.kind)}</span>
+                        <span className="file-row-chevron" aria-hidden="true">
+                          ›
+                        </span>
+                      </Toggle>
+                    </li>
+                  ))
+                )
               ) : (
                 <li className="file-list-message">
-                  <div className="no-results"><span className="no-results-icon" aria-hidden="true">⌕</span><strong>No matching files</strong><span>Try changing your search or filter.</span></div>
+                  <div className="no-results">
+                    <span className="no-results-icon" aria-hidden="true">
+                      ⌕
+                    </span>
+                    <strong>No matching files</strong>
+                    <span>Try changing your search or filter.</span>
+                  </div>
                 </li>
               )}
             </ul>
           </div>
 
-          <ResizeHandle side="preview" width={panelWidths.preview} isActive={resizing === "preview"} onPointerDown={(event) => beginResize("preview", event)} onKeyDown={(event) => handleResizeKeyDown("preview", event)} onDoubleClick={() => resetPanelWidth("preview")} />
+          <ResizeHandle
+            side="preview"
+            width={panelWidths.preview}
+            isActive={resizing === "preview"}
+            onPointerDown={(event) => beginResize("preview", event)}
+            onKeyDown={(event) => handleResizeKeyDown("preview", event)}
+            onDoubleClick={() => resetPanelWidth("preview")}
+          />
 
           <aside className="preview-panel" aria-label="File preview">
-            {selectedFile ? <PreviewContent selectedFile={selectedFile} previewKind={previewKind} previewUrl={previewUrl} previewText={previewText} previewFile={previewFile} previewLoading={previewLoading} title={<h2 title={selectedFile.name}>{selectedFile.name}</h2>} onClear={() => updateSearch({ file: undefined })} /> : <div className="preview-empty"><span className="preview-empty-mark" aria-hidden="true">✦</span><strong>Choose a file</strong><span>Select a file from the list to see its preview here.</span></div>}
+            {selectedFile ? (
+              <PreviewContent
+                selectedFile={selectedFile}
+                previewKind={previewKind}
+                previewUrl={previewUrl}
+                previewText={previewText}
+                previewFile={previewFile}
+                previewLoading={previewLoading}
+                title={<h2 title={selectedFile.name}>{selectedFile.name}</h2>}
+                onClear={() => updateSearch({ file: undefined })}
+              />
+            ) : (
+              <div className="preview-empty">
+                <span className="preview-empty-mark" aria-hidden="true">
+                  ✦
+                </span>
+                <strong>Choose a file</strong>
+                <span>Select a file from the list to see its preview here.</span>
+              </div>
+            )}
           </aside>
 
-          {selectedFile && isMobile && <Dialog isOpen onOpenChange={(isOpen) => { if (!isOpen) updateSearch({ file: undefined }); }} className="mobile-preview-dialog" showCloseButton={false}>
-            <PreviewContent selectedFile={selectedFile} previewKind={previewKind} previewUrl={previewUrl} previewText={previewText} previewFile={previewFile} previewLoading={previewLoading} title={<DialogTitle title={selectedFile.name} className="preview-title">{selectedFile.name}</DialogTitle>} onClear={() => updateSearch({ file: undefined })} />
-          </Dialog>}
+          {selectedFile && isMobile && (
+            <Dialog
+              isOpen
+              onOpenChange={(isOpen) => {
+                if (!isOpen) updateSearch({ file: undefined });
+              }}
+              className="mobile-preview-dialog"
+              showCloseButton={false}
+            >
+              <PreviewContent
+                selectedFile={selectedFile}
+                previewKind={previewKind}
+                previewUrl={previewUrl}
+                previewText={previewText}
+                previewFile={previewFile}
+                previewLoading={previewLoading}
+                title={
+                  <DialogTitle title={selectedFile.name} className="preview-title">
+                    {selectedFile.name}
+                  </DialogTitle>
+                }
+                onClear={() => updateSearch({ file: undefined })}
+              />
+            </Dialog>
+          )}
         </section>
       )}
     </main>
