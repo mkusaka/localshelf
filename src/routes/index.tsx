@@ -1,0 +1,36 @@
+import { createFileRoute } from "@tanstack/react-router";
+import Home, { type LibrarySearch } from "../../app/page";
+
+const FILTER_VALUES = new Set(["all", "image", "video", "audio", "document"]);
+const VIEW_VALUES = new Set(["list", "preview"]);
+
+export const Route = createFileRoute("/")({
+  validateSearch: (search: Record<string, unknown>): LibrarySearch => ({
+    folder: typeof search.folder === "string" ? search.folder : undefined,
+    dir: typeof search.dir === "string" ? search.dir : undefined,
+    file: typeof search.file === "string" ? search.file : undefined,
+    q: typeof search.q === "string" ? search.q : undefined,
+    filter: typeof search.filter === "string" && FILTER_VALUES.has(search.filter)
+      ? search.filter as LibrarySearch["filter"]
+      : "all",
+    view: typeof search.view === "string" && VIEW_VALUES.has(search.view)
+      ? search.view as LibrarySearch["view"]
+      : "list",
+  }),
+  component: LibraryRoute,
+});
+
+function LibraryRoute() {
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+
+  const updateSearch = (updates: Partial<LibrarySearch>) => {
+    void navigate({
+      search: (previous) => ({ ...previous, ...updates }),
+      replace: true,
+      resetScroll: false,
+    });
+  };
+
+  return <Home search={search} updateSearch={updateSearch} />;
+}

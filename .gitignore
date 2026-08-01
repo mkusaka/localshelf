@@ -100,7 +100,6 @@ dist
 
 # vitepress build output
 **/.vitepress/dist
-
 # vitepress cache directory
 **/.vitepress/cache
 
@@ -141,3 +140,15 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Local build/runtime files
+.wrangler/
+/outputs/
+/work/
+*.pem
+.DS_Store
+next-env.d.ts
+.vercel
+
+# TanStack Router generated output
+src/routeTree.gen.ts

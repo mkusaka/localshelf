@@ -1,0 +1,9 @@
+minimumReleaseAge: 1440
+trustPolicy: no-downgrade
+trustPolicyIgnoreAfter: 10080
+
+allowBuilds:
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
+  workerd: true
