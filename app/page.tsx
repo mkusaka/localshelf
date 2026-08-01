@@ -37,6 +37,7 @@ import { cn } from "../lib/utils";
 
 type FileKind = "image" | "video" | "audio" | "document" | "other";
 export type FilterKind = "all" | FileKind;
+type FilterValue = Exclude<FilterKind, "other">;
 
 export type LibrarySearch = {
   folder?: string;
@@ -107,13 +108,14 @@ const IMAGE_EXTENSIONS = new Set([
 const PDF_EXTENSIONS = new Set(["pdf"]);
 const VIDEO_EXTENSIONS = new Set(["avi", "m4v", "mkv", "mov", "mp4", "webm"]);
 const AUDIO_EXTENSIONS = new Set(["aac", "flac", "m4a", "mp3", "ogg", "wav"]);
-const FILTERS: { value: FilterKind; label: string }[] = [
+const FILTERS: { value: FilterValue; label: string }[] = [
   { value: "all", label: "All files" },
   { value: "image", label: "Images" },
   { value: "video", label: "Video" },
   { value: "audio", label: "Audio" },
   { value: "document", label: "Documents" },
 ];
+type FilterCounts = Record<FilterValue, number>;
 const EMPTY_FILES: LocalFile[] = [];
 const PANEL_LIMITS = {
   sidebar: { min: 180, max: 360 },
@@ -163,11 +165,13 @@ function ResizeHandle({
 
 function FileTypeFilters({
   filter,
+  counts,
   onSelect,
   className = "",
 }: {
   filter: FilterKind;
-  onSelect: (value: FilterKind) => void;
+  counts: FilterCounts;
+  onSelect: (value: FilterValue) => void;
   className?: string;
 }) {
   return (
@@ -177,13 +181,14 @@ function FileTypeFilters({
       selectedKeys={new Set([filter])}
       onSelectionChange={(keys) => {
         const next = Array.from(keys)[0];
-        if (typeof next === "string") onSelect(next as FilterKind);
+        if (typeof next === "string") onSelect(next as FilterValue);
       }}
       aria-label="Filter by file type"
     >
       {FILTERS.map((item) => (
         <ToggleGroupItem className="filter-pill" id={item.value} key={item.value}>
-          {item.label}
+          <span>{item.label}</span>
+          <span className="filter-pill-count">{counts[item.value]}</span>
         </ToggleGroupItem>
       ))}
     </ToggleGroup>
@@ -196,6 +201,7 @@ function LibrarySelector({
   count,
   subtitle,
   onSelect,
+  onRemove,
   className = "",
 }: {
   libraries: LocalLibrary[];
@@ -203,34 +209,38 @@ function LibrarySelector({
   count: number;
   subtitle?: string;
   onSelect: (id: string) => void;
+  onRemove?: (id: string) => void;
   className?: string;
 }) {
   const selectedLibrary = libraries.find((library) => library.id === selectedId);
   const selectedName = selectedLibrary?.name ?? (selectedId || "Selected folder");
 
   return (
-    <Select
-      className={`library-selector-wrap ${className}`}
-      selectedKey={selectedId}
-      onSelectionChange={(key) => onSelect(String(key))}
-      aria-label="Select root folder"
-    >
-      <SelectTrigger className="library-selector">
-        <span className="folder-glyph" aria-hidden="true">▰</span>
-        <span className={`library-selector-copy ${subtitle ? "has-subtitle" : ""}`}>
-          <SelectValue className="library-selector-name">{selectedName}</SelectValue>
-          {subtitle && <small>{subtitle}</small>}
-        </span>
-        <span className="item-count">{count}</span>
-      </SelectTrigger>
-      <SelectContent className="library-selector-menu">
-        {libraries.map((library) => (
-          <SelectItem id={library.id} key={library.id} textValue={library.name}>
-            {library.name}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <div className="library-selector-wrap">
+      <Select
+        className={`library-selector-select ${className}`}
+        selectedKey={selectedId}
+        onSelectionChange={(key) => onSelect(String(key))}
+        aria-label="Select root folder"
+      >
+        <SelectTrigger className="library-selector">
+          <span className="folder-glyph" aria-hidden="true">▰</span>
+          <span className={`library-selector-copy ${subtitle ? "has-subtitle" : ""}`}>
+            <SelectValue className="library-selector-name">{selectedName}</SelectValue>
+            {subtitle && <small>{subtitle}</small>}
+          </span>
+          <span className="item-count">{count}</span>
+        </SelectTrigger>
+        <SelectContent className="library-selector-menu">
+          {libraries.map((library) => (
+            <SelectItem id={library.id} key={library.id} textValue={library.name}>
+              {library.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {onRemove && <Button variant="ghost" className="library-remove-button" onPress={() => onRemove(selectedId)} aria-label={`Remove ${selectedName} from library`}>Remove from library</Button>}
+    </div>
   );
 }
 
@@ -611,6 +621,19 @@ export default function Home({ search, updateSearch, resetSearch }: HomeProps) {
       : files,
     [files, activeDirectory],
   );
+  const filterCounts = useMemo<FilterCounts>(() => {
+    const counts: FilterCounts = {
+      all: activeFiles.length,
+      image: 0,
+      video: 0,
+      audio: 0,
+      document: 0,
+    };
+    for (const file of activeFiles) {
+      if (file.kind !== "other") counts[file.kind] += 1;
+    }
+    return counts;
+  }, [activeFiles]);
   const filteredFiles = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     return activeFiles
@@ -677,6 +700,19 @@ export default function Home({ search, updateSearch, resetSearch }: HomeProps) {
 
   const selectFolder = (path: string) => {
     updateSearch({ dir: path || undefined, file: undefined, q: undefined, filter: "all" });
+  };
+
+  const removeRoot = (id: string) => {
+    const nextLibraries = libraries.filter((library) => library.id !== id);
+    setLibraries(nextLibraries);
+    setError("");
+    if (nextLibraries.length === 0) {
+      resetSearch();
+      return;
+    }
+    if (id === activeRootId) {
+      updateSearch({ folder: nextLibraries[0].id, dir: undefined, file: undefined, q: undefined, filter: "all" });
+    }
   };
 
   const resetLibrary = () => {
@@ -772,18 +808,18 @@ export default function Home({ search, updateSearch, resetSearch }: HomeProps) {
         <section className="workspace" style={workspaceStyle} aria-label="Local file workspace">
           <aside className="sidebar">
             <div className="sidebar-heading"><span className="sidebar-label">LIBRARY</span><Button variant="ghost" size="icon" className="icon-button" onPress={() => void openFolder()} aria-label="Open another folder">＋</Button></div>
-            <LibrarySelector libraries={rootLibraries} selectedId={activeRootId} count={files.length} onSelect={selectRoot} />
+            <LibrarySelector libraries={rootLibraries} selectedId={activeRootId} count={files.length} onSelect={selectRoot} onRemove={removeRoot} />
             {folderTree.length > 0 && <div className="sidebar-section folder-section"><span className="sidebar-label">FOLDERS</span><FolderTree nodes={folderTree} selectedPath={activeDirectory} onSelect={(path) => updateSearch({ dir: path, file: undefined, q: undefined, filter: "all" })} /></div>}
-            <div className="sidebar-section file-type-section"><span className="sidebar-label">FILTER BY TYPE</span><FileTypeFilters filter={filter} onSelect={(value) => updateSearch({ filter: value })} className="sidebar-filter-pills" /></div>
+            <div className="sidebar-section file-type-section"><span className="sidebar-label">FILTER BY TYPE</span><FileTypeFilters filter={filter} counts={filterCounts} onSelect={(value) => updateSearch({ filter: value })} className="sidebar-filter-pills" /></div>
             <div className="sidebar-footer"><span className="status-dot" aria-hidden="true" />Safe local preview</div>
           </aside>
 
           <ResizeHandle side="sidebar" width={panelWidths.sidebar} isActive={resizing === "sidebar"} onPointerDown={(event) => beginResize("sidebar", event)} onKeyDown={(event) => handleResizeKeyDown("sidebar", event)} onDoubleClick={() => resetPanelWidth("sidebar")} />
 
           <div className="file-area">
-            <div className="mobile-library-nav"><div className="mobile-library-heading"><LibrarySelector libraries={rootLibraries} selectedId={activeRootId} count={files.length} subtitle={activeDirectory || "All folders"} onSelect={selectRoot} className="mobile-library-root" /><Button variant="ghost" size="icon" className="icon-button" onPress={() => void openFolder()} aria-label="Open another folder">＋</Button></div>{mobileFolderNodes.length > 0 && <div className="mobile-folder-strip">{mobileFolderNodes.map((node) => <Button variant="ghost" className={`mobile-folder-chip ${activeDirectory === node.path ? "is-selected" : ""}`} key={node.path} onPress={() => selectFolder(node.path)}><span aria-hidden="true">▱</span><span>{node.path}</span></Button>)}</div>}</div>
+            <div className="mobile-library-nav"><div className="mobile-library-heading"><LibrarySelector libraries={rootLibraries} selectedId={activeRootId} count={files.length} subtitle={activeDirectory || "All folders"} onSelect={selectRoot} onRemove={removeRoot} className="mobile-library-root" /><Button variant="ghost" size="icon" className="icon-button" onPress={() => void openFolder()} aria-label="Open another folder">＋</Button></div>{mobileFolderNodes.length > 0 && <div className="mobile-folder-strip">{mobileFolderNodes.map((node) => <Button variant="ghost" className={`mobile-folder-chip ${activeDirectory === node.path ? "is-selected" : ""}`} key={node.path} onPress={() => selectFolder(node.path)}><span aria-hidden="true">▱</span><span>{node.path}</span></Button>)}</div>}</div>
             <div className="content-header"><div><p className="eyebrow">{activeDirectory || rootName || "LOCAL LIBRARY"}</p><h1>{query ? `Files matching “${query}”` : activeDirectory ? activeDirectory.split("/").pop() : "Files"}</h1></div><div className="view-meta"><span>{filteredFiles.length} / {activeFiles.length} files</span><Tabs className="view-tabs" selectedKey={view} onSelectionChange={(key) => { if (key === "list" || key === "preview") updateSearch({ view: key }); }}><TabsList className="view-tabs-list" aria-label="File view"><TabsTrigger className="view-button" id="list" aria-label="List view">☷</TabsTrigger><TabsTrigger className="view-button" id="preview" aria-label="Preview grid">▦</TabsTrigger></TabsList></Tabs></div></div>
-            <div className="toolbar"><label className="search-box"><span aria-hidden="true">⌕</span><Input ref={searchInputRef} type="search" value={query} onChange={(event) => updateSearch({ q: event.currentTarget.value || undefined })} placeholder="Search files and folders" aria-label="Search files and folders" /><kbd>⌘ K</kbd></label><FileTypeFilters filter={filter} onSelect={(value) => updateSearch({ filter: value })} className="mobile-filter-pills" /></div>
+            <div className="toolbar"><label className="search-box"><span aria-hidden="true">⌕</span><Input ref={searchInputRef} type="search" value={query} onChange={(event) => updateSearch({ q: event.currentTarget.value || undefined })} placeholder="Search files and folders" aria-label="Search files and folders" /><kbd>⌘ K</kbd></label><FileTypeFilters filter={filter} counts={filterCounts} onSelect={(value) => updateSearch({ filter: value })} className="mobile-filter-pills" /></div>
             {error && <p className="error-message error-inline" role="alert">{error}</p>}
             <ul className={`file-list ${view === "preview" ? "file-list-preview" : ""}`} aria-label={view === "preview" ? "Preview grid" : "File list"}>
               {activeFiles.length === 0 ? (

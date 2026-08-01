@@ -40,6 +40,8 @@ test("keeps the local file surface and URL routing in the client app", async () 
   assert.match(page, /file-list-preview/);
   assert.match(page, /Preview grid/);
   assert.match(page, /mobile-preview-dialog/);
+  assert.match(page, /filter-pill-count/);
+  assert.match(page, /Remove from library/);
   assert.match(page, /onDoubleClick/);
   assert.match(page, /resetPanelWidth/);
   assert.match(page, /dir: undefined, file: undefined/);
