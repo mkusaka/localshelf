@@ -25,6 +25,19 @@ pnpm start
 `pnpm start` runs Vite's static preview server. The generated `dist` directory
 can be deployed as a static site.
 
+## Deploy to Cloudflare Workers
+
+This project uses Cloudflare Workers Static Assets with the Vite build output
+and SPA fallback configured in `wrangler.jsonc`.
+
+```bash
+pnpm exec wrangler login
+pnpm deploy
+```
+
+The app only reads local files in the browser. Deploying the app does not
+upload the folders selected by a user.
+
 ## Features
 
 - Recursive folder listing

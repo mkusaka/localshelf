@@ -1,5 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import "@fontsource-variable/geist";
 import { RouterProvider } from "@tanstack/react-router";
 import { router } from "./router";
 

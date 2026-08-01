@@ -2,7 +2,38 @@
 
 /* Local file previews require a native img element for blob URLs. */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+} from "react";
+
+import { Button } from "../components/ui/button";
+import { buttonVariants } from "../components/ui/button-variants";
+import {
+  Dialog,
+  DialogTitle,
+} from "../components/ui/dialog";
+import { Input } from "../components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Toggle } from "../components/ui/toggle";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "../components/ui/toggle-group";
+import { cn } from "../lib/utils";
 
 type FileKind = "image" | "video" | "audio" | "document" | "other";
 export type FilterKind = "all" | FileKind;
@@ -19,6 +50,7 @@ export type LibrarySearch = {
 type HomeProps = {
   search: LibrarySearch;
   updateSearch: (updates: Partial<LibrarySearch>) => void;
+  resetSearch: () => void;
 };
 
 type LocalFile = {
@@ -83,6 +115,51 @@ const FILTERS: { value: FilterKind; label: string }[] = [
   { value: "document", label: "Documents" },
 ];
 const EMPTY_FILES: LocalFile[] = [];
+const PANEL_LIMITS = {
+  sidebar: { min: 180, max: 360 },
+  preview: { min: 280, max: 520 },
+} as const;
+const DEFAULT_PANEL_WIDTHS = { sidebar: 220, preview: 360 };
+type ResizeSide = keyof typeof DEFAULT_PANEL_WIDTHS;
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
+}
+
+function ResizeHandle({
+  side,
+  width,
+  isActive,
+  onPointerDown,
+  onKeyDown,
+  onDoubleClick,
+}: {
+  side: ResizeSide;
+  width: number;
+  isActive: boolean;
+  onPointerDown: (event: ReactPointerEvent<HTMLDivElement>) => void;
+  onKeyDown: (event: ReactKeyboardEvent<HTMLDivElement>) => void;
+  onDoubleClick: () => void;
+}) {
+  const label = side === "sidebar" ? "library navigation" : "preview panel";
+  const limits = PANEL_LIMITS[side];
+
+  return (
+    <div
+      className={cn("resize-handle", `resize-handle-${side}`, isActive && "is-resizing")}
+      role="separator"
+      aria-label={`Resize ${label}. Double-click to reset width.`}
+      aria-orientation="vertical"
+      aria-valuemin={limits.min}
+      aria-valuemax={limits.max}
+      aria-valuenow={width}
+      tabIndex={0}
+      onPointerDown={onPointerDown}
+      onKeyDown={onKeyDown}
+      onDoubleClick={onDoubleClick}
+    />
+  );
+}
 
 function FileTypeFilters({
   filter,
@@ -94,13 +171,22 @@ function FileTypeFilters({
   className?: string;
 }) {
   return (
-    <div className={`filter-pills ${className}`} aria-label="Filter by file type">
+    <ToggleGroup
+      className={`filter-pills ${className}`}
+      selectionMode="single"
+      selectedKeys={new Set([filter])}
+      onSelectionChange={(keys) => {
+        const next = Array.from(keys)[0];
+        if (typeof next === "string") onSelect(next as FilterKind);
+      }}
+      aria-label="Filter by file type"
+    >
       {FILTERS.map((item) => (
-        <button className={`filter-pill ${filter === item.value ? "is-active" : ""}`} type="button" key={item.value} onClick={() => onSelect(item.value)}>
+        <ToggleGroupItem className="filter-pill" id={item.value} key={item.value}>
           {item.label}
-        </button>
+        </ToggleGroupItem>
       ))}
-    </div>
+    </ToggleGroup>
   );
 }
 
@@ -123,18 +209,28 @@ function LibrarySelector({
   const selectedName = selectedLibrary?.name ?? (selectedId || "Selected folder");
 
   return (
-    <label className={`library-selector ${className}`}>
-      <span className="folder-glyph" aria-hidden="true">▰</span>
-      <span className={`library-selector-copy ${subtitle ? "has-subtitle" : ""}`}>
-        <span className="library-selector-name">{selectedName}</span>
-        {subtitle && <small>{subtitle}</small>}
-      </span>
-      <span className="library-selector-chevron" aria-hidden="true">⌄</span>
-      <span className="item-count">{count}</span>
-      <select className="library-selector-control" value={selectedId} onChange={(event) => onSelect(event.target.value)} aria-label="Select root folder">
-        {libraries.map((library) => <option value={library.id} key={library.id}>{library.name}</option>)}
-      </select>
-    </label>
+    <Select
+      className={`library-selector-wrap ${className}`}
+      selectedKey={selectedId}
+      onSelectionChange={(key) => onSelect(String(key))}
+      aria-label="Select root folder"
+    >
+      <SelectTrigger className="library-selector">
+        <span className="folder-glyph" aria-hidden="true">▰</span>
+        <span className={`library-selector-copy ${subtitle ? "has-subtitle" : ""}`}>
+          <SelectValue className="library-selector-name">{selectedName}</SelectValue>
+          {subtitle && <small>{subtitle}</small>}
+        </span>
+        <span className="item-count">{count}</span>
+      </SelectTrigger>
+      <SelectContent className="library-selector-menu">
+        {libraries.map((library) => (
+          <SelectItem id={library.id} key={library.id} textValue={library.name}>
+            {library.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
 
@@ -236,8 +332,8 @@ function FolderTreeNode({
   return (
     <li className="folder-tree-item">
       <div className="folder-tree-row">
-        {node.children.length > 0 ? <button className="folder-toggle" type="button" onClick={() => setIsExpanded((expanded) => !expanded)} aria-label={`${isExpanded ? "Collapse" : "Expand"} ${node.name}`} aria-expanded={isExpanded}>{isExpanded ? "⌄" : "›"}</button> : <span className="folder-toggle-spacer" aria-hidden="true" />}
-        <button className={`folder-tree-button ${selectedPath === node.path ? "is-selected" : ""}`} type="button" onClick={() => onSelect(node.path)} aria-pressed={selectedPath === node.path}><span className="folder-glyph folder-glyph-small" aria-hidden="true">▱</span><span className="folder-name">{node.name}</span><span className="item-count">{node.count}</span></button>
+        {node.children.length > 0 ? <Button variant="ghost" size="icon-xs" className="folder-toggle" onPress={() => setIsExpanded((expanded) => !expanded)} aria-label={`${isExpanded ? "Collapse" : "Expand"} ${node.name}`} aria-expanded={isExpanded}>{isExpanded ? "⌄" : "›"}</Button> : <span className="folder-toggle-spacer" aria-hidden="true" />}
+        <Button variant="ghost" className={`folder-tree-button ${selectedPath === node.path ? "is-selected" : ""}`} onPress={() => onSelect(node.path)} aria-pressed={selectedPath === node.path}><span className="folder-glyph folder-glyph-small" aria-hidden="true">▱</span><span className="folder-name">{node.name}</span><span className="item-count">{node.count}</span></Button>
       </div>
       {isExpanded && node.children.length > 0 && <FolderTree nodes={node.children} selectedPath={selectedPath} onSelect={onSelect} />}
     </li>
@@ -275,12 +371,12 @@ function FilePreviewTile({
 
   return (
     <li className="preview-tile-item">
-      <button className={`preview-tile ${isSelected ? "is-selected" : ""}`} type="button" onClick={onSelect}>
+      <Button variant="ghost" className={`preview-tile ${isSelected ? "is-selected" : ""}`} onPress={onSelect}>
         <span className="preview-tile-media">
           {previewUrl && file.kind === "image" ? <img src={previewUrl} alt="" loading="lazy" /> : previewUrl && file.kind === "video" ? <video src={previewUrl} muted playsInline preload="metadata" /> : <span className={`preview-tile-type preview-tile-type-${file.kind}`}>{file.extension === "pdf" ? "PDF" : getKindAbbreviation(file.kind)}</span>}
         </span>
         <span className="preview-tile-copy"><strong>{file.name}</strong><span>{file.path}</span></span>
-      </button>
+      </Button>
     </li>
   );
 }
@@ -322,7 +418,147 @@ function fileFromFallback(file: File): LocalFile {
   };
 }
 
-export default function Home({ search, updateSearch }: HomeProps) {
+function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(() => (
+    typeof window !== "undefined" && window.matchMedia(query).matches
+  ));
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(query);
+    const onChange = () => setMatches(mediaQuery.matches);
+    onChange();
+    mediaQuery.addEventListener("change", onChange);
+    return () => mediaQuery.removeEventListener("change", onChange);
+  }, [query]);
+
+  return matches;
+}
+
+function useResizablePanels() {
+  const [panelWidths, setPanelWidths] = useState(DEFAULT_PANEL_WIDTHS);
+  const [resizing, setResizing] = useState<ResizeSide | null>(null);
+  const resizeStartRef = useRef<{ side: ResizeSide; clientX: number; width: number } | null>(null);
+
+  const adjustPanelWidth = (side: ResizeSide, amount: number) => {
+    setPanelWidths((current) => ({
+      ...current,
+      [side]: clamp(current[side] + amount, PANEL_LIMITS[side].min, PANEL_LIMITS[side].max),
+    }));
+  };
+
+  const beginResize = (side: ResizeSide, event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    resizeStartRef.current = { side, clientX: event.clientX, width: panelWidths[side] };
+    setResizing(side);
+  };
+
+  const handleResizeKeyDown = (side: ResizeSide, event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      adjustPanelWidth(side, -16);
+    } else if (event.key === "ArrowRight") {
+      event.preventDefault();
+      adjustPanelWidth(side, 16);
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      setPanelWidths((current) => ({ ...current, [side]: PANEL_LIMITS[side].min }));
+    } else if (event.key === "End") {
+      event.preventDefault();
+      setPanelWidths((current) => ({ ...current, [side]: PANEL_LIMITS[side].max }));
+    }
+  };
+
+  const resetPanelWidth = (side: ResizeSide) => {
+    setPanelWidths((current) => ({ ...current, [side]: DEFAULT_PANEL_WIDTHS[side] }));
+  };
+
+  useEffect(() => {
+    if (!resizing) return undefined;
+    const start = resizeStartRef.current;
+    if (!start) return undefined;
+
+    const onPointerMove = (event: PointerEvent) => {
+      const delta = event.clientX - start.clientX;
+      const direction = start.side === "sidebar" ? 1 : -1;
+      const nextWidth = clamp(
+        start.width + delta * direction,
+        PANEL_LIMITS[start.side].min,
+        PANEL_LIMITS[start.side].max,
+      );
+      setPanelWidths((current) => ({ ...current, [start.side]: nextWidth }));
+    };
+    const stopResize = () => {
+      resizeStartRef.current = null;
+      setResizing(null);
+    };
+
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", stopResize);
+    window.addEventListener("pointercancel", stopResize);
+
+    return () => {
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", stopResize);
+      window.removeEventListener("pointercancel", stopResize);
+    };
+  }, [resizing]);
+
+  return { panelWidths, resizing, beginResize, handleResizeKeyDown, resetPanelWidth };
+}
+
+function PreviewContent({
+  selectedFile,
+  previewKind,
+  previewUrl,
+  previewText,
+  previewFile,
+  previewLoading,
+  title,
+  onClear,
+}: {
+  selectedFile: LocalFile;
+  previewKind: FileKind;
+  previewUrl: string;
+  previewText: string;
+  previewFile: File | null;
+  previewLoading: boolean;
+  title: ReactNode;
+  onClear: () => void;
+}) {
+  const totalSize = previewFile ? formatBytes(previewFile.size) : "—";
+  const isPdfPreview = selectedFile.extension === "pdf" || previewFile?.type === "application/pdf";
+  const isTextPreview = Boolean(previewText) && previewKind === "document" && !isPdfPreview;
+
+  return (
+    <>
+      <div className="preview-heading">
+        <div>
+          <span className={`file-type file-type-${previewKind}`}>{getKindAbbreviation(previewKind)}</span>
+          <p className="eyebrow">PREVIEW</p>
+        </div>
+        <div className="preview-actions">
+          {previewUrl && <a className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "download-button")} href={previewUrl} download={selectedFile.name} aria-label={`Download ${selectedFile.name}`}>↓</a>}
+          <Button variant="ghost" size="icon" className="download-button clear-button" onPress={onClear} aria-label="Clear file selection">×</Button>
+        </div>
+      </div>
+      <div className={`preview-canvas preview-${previewKind}`}>
+        {previewLoading ? <div className="preview-placeholder">Loading preview…</div> : previewKind === "image" && previewUrl ? <img src={previewUrl} alt={selectedFile.name} /> : previewKind === "video" && previewUrl ? <video src={previewUrl} controls playsInline /> : previewKind === "audio" && previewUrl ? <div className="audio-preview"><span className="audio-disc" aria-hidden="true">◖</span><audio src={previewUrl} controls /></div> : isPdfPreview && previewUrl ? <object data={previewUrl} type="application/pdf" aria-label={`PDF preview of ${selectedFile.name}`}><div className="preview-fallback"><span>This browser cannot embed PDFs.</span><a href={previewUrl} target="_blank" rel="noreferrer">Open PDF</a></div></object> : isTextPreview ? <pre>{previewText}</pre> : <div className="preview-placeholder"><span className="large-file-type">{getKindAbbreviation(previewKind)}</span><span>Preview is not available for this file type.</span></div>}
+      </div>
+      <div className="preview-details">
+        {title}
+        <p>{selectedFile.path}</p>
+        <dl><div><dt>Type</dt><dd>{getKindLabel(previewKind)}</dd></div><div><dt>Size</dt><dd>{totalSize}</dd></div></dl>
+      </div>
+    </>
+  );
+}
+
+export default function Home({ search, updateSearch, resetSearch }: HomeProps) {
   const fallbackInputRef = useRef<HTMLInputElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [libraries, setLibraries] = useState<LocalLibrary[]>([]);
@@ -332,6 +568,8 @@ export default function Home({ search, updateSearch }: HomeProps) {
   const [previewText, setPreviewText] = useState("");
   const [previewFile, setPreviewFile] = useState<File | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const isMobile = useMediaQuery("(max-width: 700px)");
+  const { panelWidths, resizing, beginResize, handleResizeKeyDown, resetPanelWidth } = useResizablePanels();
 
   const selectedId = search.file ?? null;
   const filter = search.filter;
@@ -367,19 +605,6 @@ export default function Home({ search, updateSearch }: HomeProps) {
     [files, selectedId],
   );
 
-  useEffect(() => {
-    if (!selectedFile || !window.matchMedia("(max-width: 700px)").matches) return undefined;
-
-    const previousBodyOverflow = document.body.style.overflow;
-    const previousDocumentOverflow = document.documentElement.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.documentElement.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = previousBodyOverflow;
-      document.documentElement.style.overflow = previousDocumentOverflow;
-    };
-  }, [selectedFile]);
   const activeFiles = useMemo(
     () => activeDirectory
       ? files.filter((file) => file.path === activeDirectory || file.path.startsWith(`${activeDirectory}/`))
@@ -457,7 +682,7 @@ export default function Home({ search, updateSearch }: HomeProps) {
   const resetLibrary = () => {
     setLibraries([]);
     setError("");
-    updateSearch({ folder: undefined, dir: undefined, file: undefined, q: undefined, filter: "all", view: "list" });
+    resetSearch();
   };
 
   useEffect(() => {
@@ -507,22 +732,23 @@ export default function Home({ search, updateSearch }: HomeProps) {
     };
   }, [selectedFile]);
 
-  const totalSize = previewFile ? formatBytes(previewFile.size) : "—";
   const previewKind = selectedFile
     ? getFileKind(selectedFile.name, previewFile?.type ?? selectedFile.mimeType ?? "")
     : "other";
-  const isPdfPreview = Boolean(selectedFile && (selectedFile.extension === "pdf" || previewFile?.type === "application/pdf"));
-  const isTextPreview = Boolean(previewText) && previewKind === "document" && !isPdfPreview;
   const isEmpty = !hasLibrary;
+  const workspaceStyle = {
+    "--sidebar-width": `${panelWidths.sidebar}px`,
+    "--preview-width": `${panelWidths.preview}px`,
+  } as CSSProperties;
 
   return (
     <main className="app-shell">
       <input ref={(element) => { fallbackInputRef.current = element; element?.setAttribute("webkitdirectory", ""); }} className="visually-hidden" type="file" multiple onChange={handleFallbackChange} aria-label="Choose a folder" />
       <header className="topbar">
-        <button className="brand-lockup brand-link" type="button" onClick={resetLibrary} aria-label="Return to LocalShelf home"><span className="brand-mark" aria-hidden="true">L</span><span className="brand-name">LocalShelf</span><span className="brand-version">LOCAL VIEWER</span></button>
+        <Button variant="ghost" className="brand-lockup brand-link" onPress={resetLibrary} aria-label="Return to LocalShelf home"><span className="brand-mark" aria-hidden="true">L</span><span className="brand-name">LocalShelf</span><span className="brand-version">LOCAL VIEWER</span></Button>
         <div className="topbar-actions">
           <span className="privacy-note"><span className="status-dot" aria-hidden="true" />Files stay on this device</span>
-          <button className="button button-primary button-small" type="button" onClick={openFolder} disabled={isLoading}><span aria-hidden="true">＋</span>{isLoading ? "Loading…" : "Open folder"}</button>
+          <Button className="button button-primary button-small" onPress={() => void openFolder()} isDisabled={isLoading}><span aria-hidden="true">＋</span>{isLoading ? "Loading…" : "Open folder"}</Button>
         </div>
       </header>
 
@@ -532,7 +758,7 @@ export default function Home({ search, updateSearch }: HomeProps) {
             <p className="eyebrow">YOUR PRIVATE FILE SHELF</p>
             <h1 id="empty-title">Your files,<br />all in one shelf.</h1>
             <p className="landing-description">Browse images, video, audio, documents, and PDFs directly in your browser. Nothing is uploaded, and your files stay on this device.</p>
-            <button className="button button-primary button-large" type="button" onClick={openFolder} disabled={isLoading}><span className="button-icon" aria-hidden="true">↗</span>{isLoading ? "Loading folder…" : "Choose your first folder"}</button>
+            <Button className="button button-primary button-large" onPress={() => void openFolder()} isDisabled={isLoading}><span className="button-icon" aria-hidden="true">↗</span>{isLoading ? "Loading folder…" : "Choose your first folder"}</Button>
             <p className="support-note">Chrome / Edge recommended · Read-only access</p>
             {error && <p className="error-message" role="alert">{error}</p>}
           </div>
@@ -543,19 +769,21 @@ export default function Home({ search, updateSearch }: HomeProps) {
           </div>
         </section>
       ) : (
-        <section className="workspace" aria-label="Local file workspace">
+        <section className="workspace" style={workspaceStyle} aria-label="Local file workspace">
           <aside className="sidebar">
-            <div className="sidebar-heading"><span className="sidebar-label">LIBRARY</span><button className="icon-button" type="button" onClick={openFolder} aria-label="Open another folder">＋</button></div>
+            <div className="sidebar-heading"><span className="sidebar-label">LIBRARY</span><Button variant="ghost" size="icon" className="icon-button" onPress={() => void openFolder()} aria-label="Open another folder">＋</Button></div>
             <LibrarySelector libraries={rootLibraries} selectedId={activeRootId} count={files.length} onSelect={selectRoot} />
             {folderTree.length > 0 && <div className="sidebar-section folder-section"><span className="sidebar-label">FOLDERS</span><FolderTree nodes={folderTree} selectedPath={activeDirectory} onSelect={(path) => updateSearch({ dir: path, file: undefined, q: undefined, filter: "all" })} /></div>}
             <div className="sidebar-section file-type-section"><span className="sidebar-label">FILTER BY TYPE</span><FileTypeFilters filter={filter} onSelect={(value) => updateSearch({ filter: value })} className="sidebar-filter-pills" /></div>
             <div className="sidebar-footer"><span className="status-dot" aria-hidden="true" />Safe local preview</div>
           </aside>
 
+          <ResizeHandle side="sidebar" width={panelWidths.sidebar} isActive={resizing === "sidebar"} onPointerDown={(event) => beginResize("sidebar", event)} onKeyDown={(event) => handleResizeKeyDown("sidebar", event)} onDoubleClick={() => resetPanelWidth("sidebar")} />
+
           <div className="file-area">
-            <div className="mobile-library-nav"><div className="mobile-library-heading"><LibrarySelector libraries={rootLibraries} selectedId={activeRootId} count={files.length} subtitle={activeDirectory || "All folders"} onSelect={selectRoot} className="mobile-library-root" /><button className="icon-button" type="button" onClick={openFolder} aria-label="Open another folder">＋</button></div>{mobileFolderNodes.length > 0 && <div className="mobile-folder-strip">{mobileFolderNodes.map((node) => <button className={`mobile-folder-chip ${activeDirectory === node.path ? "is-selected" : ""}`} type="button" key={node.path} onClick={() => selectFolder(node.path)}><span aria-hidden="true">▱</span><span>{node.path}</span></button>)}</div>}</div>
-            <div className="content-header"><div><p className="eyebrow">{activeDirectory || rootName || "LOCAL LIBRARY"}</p><h1>{query ? `Files matching “${query}”` : activeDirectory ? activeDirectory.split("/").pop() : "Files"}</h1></div><div className="view-meta"><span>{filteredFiles.length} / {activeFiles.length} files</span><button className={`view-button ${view === "list" ? "is-active" : ""}`} type="button" onClick={() => updateSearch({ view: "list" })} aria-label="List view" aria-pressed={view === "list"}>☷</button><button className={`view-button ${view === "preview" ? "is-active" : ""}`} type="button" onClick={() => updateSearch({ view: "preview" })} aria-label="Preview grid" aria-pressed={view === "preview"}>▦</button></div></div>
-            <div className="toolbar"><label className="search-box"><span aria-hidden="true">⌕</span><input ref={searchInputRef} type="search" value={query} onChange={(event) => updateSearch({ q: event.target.value || undefined })} placeholder="Search files and folders" aria-label="Search files and folders" /><kbd>⌘ K</kbd></label><FileTypeFilters filter={filter} onSelect={(value) => updateSearch({ filter: value })} className="mobile-filter-pills" /></div>
+            <div className="mobile-library-nav"><div className="mobile-library-heading"><LibrarySelector libraries={rootLibraries} selectedId={activeRootId} count={files.length} subtitle={activeDirectory || "All folders"} onSelect={selectRoot} className="mobile-library-root" /><Button variant="ghost" size="icon" className="icon-button" onPress={() => void openFolder()} aria-label="Open another folder">＋</Button></div>{mobileFolderNodes.length > 0 && <div className="mobile-folder-strip">{mobileFolderNodes.map((node) => <Button variant="ghost" className={`mobile-folder-chip ${activeDirectory === node.path ? "is-selected" : ""}`} key={node.path} onPress={() => selectFolder(node.path)}><span aria-hidden="true">▱</span><span>{node.path}</span></Button>)}</div>}</div>
+            <div className="content-header"><div><p className="eyebrow">{activeDirectory || rootName || "LOCAL LIBRARY"}</p><h1>{query ? `Files matching “${query}”` : activeDirectory ? activeDirectory.split("/").pop() : "Files"}</h1></div><div className="view-meta"><span>{filteredFiles.length} / {activeFiles.length} files</span><Tabs className="view-tabs" selectedKey={view} onSelectionChange={(key) => { if (key === "list" || key === "preview") updateSearch({ view: key }); }}><TabsList className="view-tabs-list" aria-label="File view"><TabsTrigger className="view-button" id="list" aria-label="List view">☷</TabsTrigger><TabsTrigger className="view-button" id="preview" aria-label="Preview grid">▦</TabsTrigger></TabsList></Tabs></div></div>
+            <div className="toolbar"><label className="search-box"><span aria-hidden="true">⌕</span><Input ref={searchInputRef} type="search" value={query} onChange={(event) => updateSearch({ q: event.currentTarget.value || undefined })} placeholder="Search files and folders" aria-label="Search files and folders" /><kbd>⌘ K</kbd></label><FileTypeFilters filter={filter} onSelect={(value) => updateSearch({ filter: value })} className="mobile-filter-pills" /></div>
             {error && <p className="error-message error-inline" role="alert">{error}</p>}
             <ul className={`file-list ${view === "preview" ? "file-list-preview" : ""}`} aria-label={view === "preview" ? "Preview grid" : "File list"}>
               {activeFiles.length === 0 ? (
@@ -567,12 +795,12 @@ export default function Home({ search, updateSearch }: HomeProps) {
                   <FilePreviewTile key={file.id} file={file} isSelected={selectedId === file.id} onSelect={() => updateSearch({ file: selectedId === file.id ? undefined : file.id })} />
                 )) : filteredFiles.map((file) => (
                   <li className="file-list-item" key={file.id}>
-                    <button className={`file-row ${selectedId === file.id ? "is-selected" : ""}`} type="button" onClick={() => updateSearch({ file: selectedId === file.id ? undefined : file.id })}>
+                    <Toggle className={`file-row ${selectedId === file.id ? "is-selected" : ""}`} isSelected={selectedId === file.id} onChange={(isSelected) => updateSearch({ file: isSelected ? file.id : undefined })}>
                       <span className={`file-type file-type-${file.kind}`}>{getKindAbbreviation(file.kind)}</span>
                       <span className="file-row-copy"><strong>{file.name}</strong><span>{file.path.includes("/") ? file.path.slice(0, file.path.lastIndexOf("/")) : "Root"}</span></span>
                       <span className="file-row-kind">{getKindLabel(file.kind)}</span>
                       <span className="file-row-chevron" aria-hidden="true">›</span>
-                    </button>
+                    </Toggle>
                   </li>
                 ))
               ) : (
@@ -583,9 +811,15 @@ export default function Home({ search, updateSearch }: HomeProps) {
             </ul>
           </div>
 
-          <aside className={`preview-panel ${selectedFile ? "is-modal-open" : ""}`} aria-label="File preview" aria-modal={selectedFile ? "true" : undefined} role={selectedFile ? "dialog" : undefined}>
-            {selectedFile ? <><div className="preview-heading"><div><span className={`file-type file-type-${previewKind}`}>{getKindAbbreviation(previewKind)}</span><p className="eyebrow">PREVIEW</p></div><div className="preview-actions">{previewUrl && <a className="download-button" href={previewUrl} download={selectedFile.name} aria-label={`Download ${selectedFile.name}`}>↓</a>}<button className="download-button clear-button" type="button" onClick={() => updateSearch({ file: undefined })} aria-label="Clear file selection">×</button></div></div><div className={`preview-canvas preview-${previewKind}`}>{previewLoading ? <div className="preview-placeholder">Loading preview…</div> : previewKind === "image" && previewUrl ? <img src={previewUrl} alt={selectedFile.name} /> : previewKind === "video" && previewUrl ? <video src={previewUrl} controls playsInline /> : previewKind === "audio" && previewUrl ? <div className="audio-preview"><span className="audio-disc" aria-hidden="true">◖</span><audio src={previewUrl} controls /></div> : isPdfPreview && previewUrl ? <object data={previewUrl} type="application/pdf" aria-label={`PDF preview of ${selectedFile.name}`}><div className="preview-fallback"><span>This browser cannot embed PDFs.</span><a href={previewUrl} target="_blank" rel="noreferrer">Open PDF</a></div></object> : isTextPreview ? <pre>{previewText}</pre> : <div className="preview-placeholder"><span className="large-file-type">{getKindAbbreviation(previewKind)}</span><span>Preview is not available for this file type.</span></div>}</div><div className="preview-details"><h2 title={selectedFile.name}>{selectedFile.name}</h2><p>{selectedFile.path}</p><dl><div><dt>Type</dt><dd>{getKindLabel(previewKind)}</dd></div><div><dt>Size</dt><dd>{totalSize}</dd></div></dl></div></> : <div className="preview-empty"><span className="preview-empty-mark" aria-hidden="true">✦</span><strong>Choose a file</strong><span>Select a file from the list to see its preview here.</span></div>}
+          <ResizeHandle side="preview" width={panelWidths.preview} isActive={resizing === "preview"} onPointerDown={(event) => beginResize("preview", event)} onKeyDown={(event) => handleResizeKeyDown("preview", event)} onDoubleClick={() => resetPanelWidth("preview")} />
+
+          <aside className="preview-panel" aria-label="File preview">
+            {selectedFile ? <PreviewContent selectedFile={selectedFile} previewKind={previewKind} previewUrl={previewUrl} previewText={previewText} previewFile={previewFile} previewLoading={previewLoading} title={<h2 title={selectedFile.name}>{selectedFile.name}</h2>} onClear={() => updateSearch({ file: undefined })} /> : <div className="preview-empty"><span className="preview-empty-mark" aria-hidden="true">✦</span><strong>Choose a file</strong><span>Select a file from the list to see its preview here.</span></div>}
           </aside>
+
+          {selectedFile && isMobile && <Dialog isOpen onOpenChange={(isOpen) => { if (!isOpen) updateSearch({ file: undefined }); }} className="mobile-preview-dialog" showCloseButton={false}>
+            <PreviewContent selectedFile={selectedFile} previewKind={previewKind} previewUrl={previewUrl} previewText={previewText} previewFile={previewFile} previewLoading={previewLoading} title={<DialogTitle title={selectedFile.name} className="preview-title">{selectedFile.name}</DialogTitle>} onClear={() => updateSearch({ file: undefined })} />
+          </Dialog>}
         </section>
       )}
     </main>

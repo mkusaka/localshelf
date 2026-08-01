@@ -19,11 +19,12 @@ test("builds the LocalShelf static shell", async () => {
 });
 
 test("keeps the local file surface and URL routing in the client app", async () => {
-  const [page, route, packageJson, indexHtml] = await Promise.all([
+  const [page, route, packageJson, indexHtml, wranglerConfig] = await Promise.all([
     readProjectFile("app/page.tsx"),
     readProjectFile("src/routes/index.tsx"),
     readProjectFile("package.json"),
     readProjectFile("index.html"),
+    readProjectFile("wrangler.jsonc"),
   ]);
 
   assert.match(page, /showDirectoryPicker/);
@@ -38,7 +39,9 @@ test("keeps the local file surface and URL routing in the client app", async () 
   assert.match(page, /Clear file selection/);
   assert.match(page, /file-list-preview/);
   assert.match(page, /Preview grid/);
-  assert.match(page, /is-modal-open/);
+  assert.match(page, /mobile-preview-dialog/);
+  assert.match(page, /onDoubleClick/);
+  assert.match(page, /resetPanelWidth/);
   assert.match(page, /dir: undefined, file: undefined/);
   assert.match(route, /validateSearch/);
   assert.match(route, /folder/);
@@ -49,8 +52,12 @@ test("keeps the local file surface and URL routing in the client app", async () 
   assert.match(packageJson, /"dev": "vite"/);
   assert.match(packageJson, /"build": "vite build"/);
   assert.match(packageJson, /"start": "vite preview"/);
+  assert.match(packageJson, /"deploy": "pnpm build && wrangler deploy --config wrangler\.jsonc"/);
   assert.match(packageJson, /@tanstack\/react-router/);
-  assert.doesNotMatch(packageJson, /"vinext"|"next"|"wrangler"/);
+  assert.match(packageJson, /react-aria-components/);
+  assert.match(packageJson, /"wrangler": "\^4\.118\.0"/);
+  assert.match(wranglerConfig, /"directory": "\.\/dist"/);
+  assert.match(wranglerConfig, /"not_found_handling": "single-page-application"/);
   assert.match(indexHtml, /lang="en"/);
   assert.doesNotMatch(page, /フォルダ|ファイル|画像|動画|音声|文書|読み込み/);
 });
