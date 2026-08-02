@@ -37,6 +37,8 @@ import { cn } from "../lib/utils";
 type FileKind = "image" | "video" | "audio" | "document" | "other";
 export type FilterKind = "all" | FileKind;
 type FilterValue = Exclude<FilterKind, "other">;
+export type SortKey = "name" | "size" | "kind";
+export type SortOrder = "asc" | "desc";
 
 export type LibrarySearch = {
   folder?: string;
@@ -44,6 +46,8 @@ export type LibrarySearch = {
   file?: string;
   q?: string;
   filter: FilterKind;
+  sort: SortKey;
+  order: SortOrder;
   view: "list" | "preview";
 };
 
@@ -140,6 +144,11 @@ const FILTERS: { value: FilterValue; label: string }[] = [
   { value: "video", label: "Video" },
   { value: "audio", label: "Audio" },
   { value: "document", label: "Documents" },
+];
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: "name", label: "Name" },
+  { value: "size", label: "Size" },
+  { value: "kind", label: "Type" },
 ];
 type FilterCounts = Record<FilterValue, number>;
 const EMPTY_FILES: LocalFile[] = [];
@@ -309,6 +318,35 @@ function getKindLabel(kind: FileKind): string {
 
 function getKindAbbreviation(kind: FileKind): string {
   return { image: "IMG", video: "VID", audio: "AUD", document: "DOC", other: "FILE" }[kind];
+}
+
+const FILE_NAME_COLLATOR = new Intl.Collator("ja", {
+  numeric: true,
+  sensitivity: "base",
+});
+
+function compareLocalFiles(a: LocalFile, b: LocalFile, sortKey: SortKey, sortOrder: SortOrder) {
+  if (sortKey === "size") {
+    if (a.size === null && b.size !== null) return 1;
+    if (a.size !== null && b.size === null) return -1;
+  }
+
+  let comparison = 0;
+  if (sortKey === "name") {
+    comparison = FILE_NAME_COLLATOR.compare(a.name, b.name);
+  } else if (sortKey === "size" && a.size !== null && b.size !== null) {
+    comparison = a.size - b.size;
+  } else if (sortKey === "kind") {
+    comparison = FILE_NAME_COLLATOR.compare(getKindLabel(a.kind), getKindLabel(b.kind));
+  }
+
+  if (comparison === 0) {
+    comparison = FILE_NAME_COLLATOR.compare(a.name, b.name);
+  }
+  if (comparison === 0) {
+    comparison = FILE_NAME_COLLATOR.compare(a.path, b.path);
+  }
+  return sortOrder === "asc" ? comparison : -comparison;
 }
 
 function useFilePreviewUrl(file: LocalFile): string {
@@ -1017,6 +1055,8 @@ function WorkspaceFileArea({
   rootName,
   query,
   filter,
+  sortBy,
+  sortOrder,
   filterCounts,
   filteredFiles,
   activeFiles,
@@ -1030,6 +1070,8 @@ function WorkspaceFileArea({
   onSelectFolder,
   onQueryChange,
   onFilterSelect,
+  onSortChange,
+  onSortOrderChange,
   onViewChange,
   onSelectFile,
 }: {
@@ -1041,6 +1083,8 @@ function WorkspaceFileArea({
   rootName: string;
   query: string;
   filter: FilterKind;
+  sortBy: SortKey;
+  sortOrder: SortOrder;
   filterCounts: FilterCounts;
   filteredFiles: LocalFile[];
   activeFiles: LocalFile[];
@@ -1054,6 +1098,8 @@ function WorkspaceFileArea({
   onSelectFolder: (path: string) => void;
   onQueryChange: (query: string) => void;
   onFilterSelect: (value: FilterValue) => void;
+  onSortChange: (value: SortKey) => void;
+  onSortOrderChange: (value: SortOrder) => void;
   onViewChange: (view: LibrarySearch["view"]) => void;
   onSelectFile: (fileId: string | undefined) => void;
 }) {
@@ -1148,6 +1194,38 @@ function WorkspaceFileArea({
           onSelect={onFilterSelect}
           className="mobile-filter-pills"
         />
+        <div className="sort-controls">
+          <Select
+            selectedKey={sortBy}
+            onSelectionChange={(key) => {
+              if (typeof key === "string" && SORT_OPTIONS.some((option) => option.value === key)) {
+                onSortChange(key as SortKey);
+              }
+            }}
+            aria-label="Sort files by"
+          >
+            <SelectTrigger className="sort-select">
+              <span>Sort by</span>
+              <SelectValue className="sort-select-value" />
+            </SelectTrigger>
+            <SelectContent>
+              {SORT_OPTIONS.map((option) => (
+                <SelectItem id={option.value} key={option.value} textValue={option.label}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            variant="ghost"
+            className="sort-order-button"
+            onPress={() => onSortOrderChange(sortOrder === "asc" ? "desc" : "asc")}
+            aria-label={sortOrder === "asc" ? "Sort descending" : "Sort ascending"}
+            title={sortOrder === "asc" ? "Sort descending" : "Sort ascending"}
+          >
+            {sortOrder === "asc" ? "↑" : "↓"}
+          </Button>
+        </div>
       </div>
       {error && (
         <p className="error-message error-inline" role="alert">
@@ -1249,6 +1327,8 @@ function WorkspaceView({
   mobileFolderNodes,
   rootName,
   filter,
+  sortBy,
+  sortOrder,
   filterCounts,
   query,
   filteredFiles,
@@ -1269,6 +1349,8 @@ function WorkspaceView({
   onRemoveRoot,
   onSelectFolder,
   onFilterSelect,
+  onSortChange,
+  onSortOrderChange,
   onQueryChange,
   onViewChange,
   onSelectFile,
@@ -1288,6 +1370,8 @@ function WorkspaceView({
   mobileFolderNodes: FolderNode[];
   rootName: string;
   filter: FilterKind;
+  sortBy: SortKey;
+  sortOrder: SortOrder;
   filterCounts: FilterCounts;
   query: string;
   filteredFiles: LocalFile[];
@@ -1308,6 +1392,8 @@ function WorkspaceView({
   onRemoveRoot: (id: string) => void;
   onSelectFolder: (path: string) => void;
   onFilterSelect: (value: FilterValue) => void;
+  onSortChange: (value: SortKey) => void;
+  onSortOrderChange: (value: SortOrder) => void;
   onQueryChange: (query: string) => void;
   onViewChange: (view: LibrarySearch["view"]) => void;
   onSelectFile: (fileId: string | undefined) => void;
@@ -1349,6 +1435,8 @@ function WorkspaceView({
         rootName={rootName}
         query={query}
         filter={filter}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
         filterCounts={filterCounts}
         filteredFiles={filteredFiles}
         activeFiles={activeFiles}
@@ -1362,6 +1450,8 @@ function WorkspaceView({
         onSelectFolder={onSelectFolder}
         onQueryChange={onQueryChange}
         onFilterSelect={onFilterSelect}
+        onSortChange={onSortChange}
+        onSortOrderChange={onSortOrderChange}
         onViewChange={onViewChange}
         onSelectFile={onSelectFile}
       />
@@ -1403,6 +1493,8 @@ function useHomeController({ search, updateSearch, resetSearch }: HomeProps) {
 
   const selectedId = search.file ?? null;
   const filter = search.filter;
+  const sortBy = search.sort;
+  const sortOrder = search.order;
   const query = search.q ?? "";
   const view = search.view;
 
@@ -1473,8 +1565,8 @@ function useHomeController({ search, updateSearch, resetSearch }: HomeProps) {
           file.path.toLowerCase().includes(normalizedQuery);
         return matchesKind && matchesQuery;
       })
-      .sort((a, b) => a.path.localeCompare(b.path, "ja"));
-  }, [activeFiles, filter, query]);
+      .sort((a, b) => compareLocalFiles(a, b, sortBy, sortOrder));
+  }, [activeFiles, filter, query, sortBy, sortOrder]);
   const folderTree = useMemo(() => buildFolderTree(files), [files]);
   const mobileFolderNodes = useMemo(() => flattenFolderTree(folderTree), [folderTree]);
 
@@ -1662,6 +1754,8 @@ function useHomeController({ search, updateSearch, resetSearch }: HomeProps) {
     resetPanelWidth,
     selectedId,
     filter,
+    sortBy,
+    sortOrder,
     query,
     view,
     rootLibraries,
@@ -1705,6 +1799,8 @@ export default function Home(props: HomeProps) {
     resetPanelWidth,
     selectedId,
     filter,
+    sortBy,
+    sortOrder,
     query,
     view,
     rootLibraries,
@@ -1789,6 +1885,8 @@ export default function Home(props: HomeProps) {
           mobileFolderNodes={mobileFolderNodes}
           rootName={rootName}
           filter={filter}
+          sortBy={sortBy}
+          sortOrder={sortOrder}
           filterCounts={filterCounts}
           query={query}
           filteredFiles={filteredFiles}
@@ -1809,6 +1907,8 @@ export default function Home(props: HomeProps) {
           onRemoveRoot={removeRoot}
           onSelectFolder={selectFolder}
           onFilterSelect={(value) => props.updateSearch({ filter: value })}
+          onSortChange={(value) => props.updateSearch({ sort: value })}
+          onSortOrderChange={(value) => props.updateSearch({ order: value })}
           onQueryChange={(nextQuery) => props.updateSearch({ q: nextQuery || undefined })}
           onViewChange={(nextView) => props.updateSearch({ view: nextView })}
           onSelectFile={(fileId) => props.updateSearch({ file: fileId })}

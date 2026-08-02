@@ -2,8 +2,10 @@ import { createFileRoute, stripSearchParams } from "@tanstack/react-router";
 import Home, { type LibrarySearch } from "../../app/page";
 
 const FILTER_VALUES = new Set(["all", "image", "video", "audio", "document"]);
+const SORT_VALUES = new Set(["name", "size", "kind"]);
+const SORT_ORDER_VALUES = new Set(["asc", "desc"]);
 const VIEW_VALUES = new Set(["list", "preview"]);
-const SEARCH_DEFAULTS = { filter: "all", view: "list" } as const;
+const SEARCH_DEFAULTS = { filter: "all", sort: "name", order: "asc", view: "list" } as const;
 
 export const Route = createFileRoute("/")({
   validateSearch: (search: Record<string, unknown>): LibrarySearch => ({
@@ -15,6 +17,14 @@ export const Route = createFileRoute("/")({
       typeof search.filter === "string" && FILTER_VALUES.has(search.filter)
         ? (search.filter as LibrarySearch["filter"])
         : "all",
+    sort:
+      typeof search.sort === "string" && SORT_VALUES.has(search.sort)
+        ? (search.sort as LibrarySearch["sort"])
+        : "name",
+    order:
+      typeof search.order === "string" && SORT_ORDER_VALUES.has(search.order)
+        ? (search.order as LibrarySearch["order"])
+        : "asc",
     view:
       typeof search.view === "string" && VIEW_VALUES.has(search.view)
         ? (search.view as LibrarySearch["view"])

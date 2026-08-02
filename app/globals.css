@@ -674,6 +674,42 @@ button:disabled {
   padding-bottom: 19px;
   border-bottom: 1px solid var(--line);
 }
+.sort-controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+}
+.sort-select {
+  width: 126px;
+  min-width: 126px;
+  height: 32px;
+  border: 0;
+  border-bottom: 1px solid #cbd6cf;
+  border-radius: 0;
+  background: transparent;
+  color: #7d8b83;
+  font-size: 11px;
+}
+.sort-select:hover,
+.sort-select:focus-visible {
+  border-bottom-color: var(--primary);
+}
+.sort-select-value {
+  gap: 5px;
+}
+.sort-order-button {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 6px;
+  color: #7d8b83;
+  font-size: 17px;
+}
+.sort-order-button:hover {
+  background: #eff5ef;
+  color: var(--ink);
+}
 .search-box {
   flex: 1;
   gap: 9px;
@@ -1005,8 +1041,9 @@ kbd {
   object-fit: contain;
 }
 .preview-canvas.preview-video {
-  height: auto;
-  min-height: 220px;
+  --video-frame-height: min(35vh, 260px);
+  height: var(--video-frame-height);
+  min-height: 0;
   background: #121b17;
 }
 .preview-canvas > video {
@@ -1015,9 +1052,9 @@ kbd {
 .preview-canvas [data-media-player].video-preview-player {
   --video-aspect-ratio: 16 / 9;
   --video-width-ratio: 1.777778;
-  --video-max-height: min(35vh, 260px);
-  width: min(100%, calc(var(--video-max-height) * var(--video-width-ratio)));
+  width: min(100%, calc(var(--video-frame-height) * var(--video-width-ratio)));
   max-width: 100%;
+  max-height: 100%;
   aspect-ratio: var(--video-aspect-ratio);
   flex: 0 1 auto;
 }
@@ -1267,6 +1304,9 @@ kbd {
     display: block;
     margin-top: 28px;
   }
+  .sort-controls {
+    margin-top: 13px;
+  }
   .file-type-section {
     display: none;
   }
@@ -1399,12 +1439,9 @@ kbd {
     margin-top: 18px;
   }
   .preview-canvas.preview-video {
-    height: auto;
-    min-height: 220px;
-  }
-  .preview-canvas [data-media-player].video-preview-player {
-    --video-max-height: min(54vh, 420px);
-    --video-max-height: min(54dvh, 420px);
+    --video-frame-height: min(72vw, 360px, calc(100dvh - 220px));
+    height: var(--video-frame-height);
+    min-height: 0;
   }
   .preview-empty {
     min-height: 180px;

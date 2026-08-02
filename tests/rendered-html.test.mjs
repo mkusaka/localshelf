@@ -66,6 +66,9 @@ test("keeps the local file surface and URL routing in the client app", async () 
   assert.match(page, /Preview grid/);
   assert.match(page, /mobile-preview-dialog/);
   assert.match(page, /filter-pill-count/);
+  assert.match(page, /Sort by/);
+  assert.match(page, /compareLocalFiles/);
+  assert.match(page, /onSortOrderChange/);
   assert.match(page, /size: file\.size/);
   assert.match(page, /file-row-size/);
   assert.match(page, /formatBytes\(file\.size\)/);
@@ -81,6 +84,8 @@ test("keeps the local file surface and URL routing in the client app", async () 
   assert.match(route, /dir/);
   assert.match(route, /file/);
   assert.match(route, /view/);
+  assert.match(route, /SORT_VALUES/);
+  assert.match(route, /SORT_ORDER_VALUES/);
   assert.match(route, /resetScroll:\s*false/);
   assert.match(packageJson, /"dev": "vite"/);
   assert.match(packageJson, /"build": "vite build"/);
