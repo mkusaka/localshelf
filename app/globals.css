@@ -1344,6 +1344,8 @@ kbd {
     border: 0;
     border-radius: 0;
     background: #f7faf7;
+    --tw-translate-x: 0;
+    --tw-translate-y: 0;
     transform: none;
   }
   .preview-canvas {
