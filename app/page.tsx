@@ -13,6 +13,10 @@ import {
   type RefObject,
   type ReactNode,
 } from "react";
+import { MediaPlayer, MediaProvider } from "@vidstack/react";
+import { defaultLayoutIcons, DefaultVideoLayout } from "@vidstack/react/player/layouts/default";
+import "@vidstack/react/player/styles/default/theme.css";
+import "@vidstack/react/player/styles/default/layouts/video.css";
 
 import { Button } from "../components/ui/button";
 import { buttonVariants } from "../components/ui/button-variants";
@@ -53,6 +57,7 @@ type LocalFile = {
   id: string;
   name: string;
   path: string;
+  size: number | null;
   extension: string;
   kind: FileKind;
   mimeType?: string;
@@ -306,6 +311,50 @@ function getKindAbbreviation(kind: FileKind): string {
   return { image: "IMG", video: "VID", audio: "AUD", document: "DOC", other: "FILE" }[kind];
 }
 
+function useFilePreviewUrl(file: LocalFile): string {
+  const [previewUrl, setPreviewUrl] = useState("");
+
+  useEffect(() => {
+    setPreviewUrl("");
+    if (file.kind !== "image" && file.kind !== "video") return undefined;
+    let active = true;
+    let objectUrl = "";
+
+    void (async () => {
+      const source = file.file ?? (await file.handle?.getFile());
+      if (!active || !source) return;
+      objectUrl = URL.createObjectURL(source);
+      setPreviewUrl(objectUrl);
+    })();
+
+    return () => {
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [file]);
+
+  return previewUrl;
+}
+
+function FileThumbnail({ file }: { file: LocalFile }) {
+  const previewUrl = useFilePreviewUrl(file);
+  const hasPreview = Boolean(previewUrl);
+
+  return (
+    <span
+      className={`file-type file-type-${file.kind}${hasPreview ? " file-type-has-preview" : ""}`}
+    >
+      {previewUrl && file.kind === "image" ? (
+        <img src={previewUrl} alt="" loading="lazy" />
+      ) : previewUrl && file.kind === "video" ? (
+        <video src={previewUrl} muted playsInline preload="metadata" aria-hidden="true" />
+      ) : (
+        <span aria-hidden="true">{getKindAbbreviation(file.kind)}</span>
+      )}
+    </span>
+  );
+}
+
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -437,25 +486,7 @@ function FilePreviewTile({
   isSelected: boolean;
   onSelect: () => void;
 }) {
-  const [previewUrl, setPreviewUrl] = useState("");
-
-  useEffect(() => {
-    if (file.kind !== "image" && file.kind !== "video") return undefined;
-    let active = true;
-    let objectUrl = "";
-
-    void (async () => {
-      const source = file.file ?? (await file.handle?.getFile());
-      if (!active || !source) return;
-      objectUrl = URL.createObjectURL(source);
-      setPreviewUrl(objectUrl);
-    })();
-
-    return () => {
-      active = false;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-  }, [file]);
+  const previewUrl = useFilePreviewUrl(file);
 
   return (
     <li className="preview-tile-item">
@@ -484,6 +515,39 @@ function FilePreviewTile({
   );
 }
 
+function VideoPreview({ src, title }: { src: string; title: string }) {
+  const [videoAspectRatio, setVideoAspectRatio] = useState({ width: 16, height: 9 });
+  const aspectRatio = `${videoAspectRatio.width} / ${videoAspectRatio.height}`;
+  const style = {
+    "--video-aspect-ratio": aspectRatio,
+    "--video-width-ratio": videoAspectRatio.width / videoAspectRatio.height,
+  } as CSSProperties & { [name: `--${string}`]: string | number };
+
+  return (
+    <MediaPlayer
+      className="video-preview-player"
+      src={src}
+      viewType="video"
+      title={title}
+      playsInline
+      preload="metadata"
+      load="eager"
+      aspectRatio={aspectRatio}
+      style={style}
+      onLoadedMetadata={(event) => {
+        const video = event.trigger?.target;
+        if (!(video instanceof HTMLVideoElement) || !video.videoWidth || !video.videoHeight) {
+          return;
+        }
+        setVideoAspectRatio({ width: video.videoWidth, height: video.videoHeight });
+      }}
+    >
+      <MediaProvider />
+      <DefaultVideoLayout icons={defaultLayoutIcons} />
+    </MediaPlayer>
+  );
+}
+
 async function scanDirectory(
   directory: FileSystemDirectoryHandle,
   parentPath = "",
@@ -495,13 +559,21 @@ async function scanDirectory(
       await scanDirectory(entry as FileSystemDirectoryHandle, path, files);
       continue;
     }
+    const fileHandle = entry as FileSystemFileHandle;
+    let size: number | null = null;
+    try {
+      size = (await fileHandle.getFile()).size;
+    } catch {
+      // Keep the file in the list when its metadata is no longer available.
+    }
     files.push({
       id: path,
       name: entry.name,
       path,
+      size,
       extension: getExtension(entry.name),
       kind: getFileKind(entry.name),
-      handle: entry as FileSystemFileHandle,
+      handle: fileHandle,
     });
   }
   return files;
@@ -514,6 +586,7 @@ function fileFromFallback(file: File): LocalFile {
     id: path,
     name: file.name,
     path,
+    size: file.size,
     extension: getExtension(file.name),
     kind: getFileKind(file.name, file.type),
     mimeType: file.type,
@@ -674,7 +747,7 @@ function PreviewContent({
         ) : previewKind === "image" && previewUrl ? (
           <img src={previewUrl} alt={selectedFile.name} />
         ) : previewKind === "video" && previewUrl ? (
-          <video src={previewUrl} controls playsInline />
+          <VideoPreview src={previewUrl} title={selectedFile.name} />
         ) : previewKind === "audio" && previewUrl ? (
           <div className="audio-preview">
             <span className="audio-disc" aria-hidden="true">
@@ -900,9 +973,7 @@ function FileList({
                 isSelected={selectedId === file.id}
                 onChange={(isSelected) => onSelectFile(isSelected ? file.id : undefined)}
               >
-                <span className={`file-type file-type-${file.kind}`}>
-                  {getKindAbbreviation(file.kind)}
-                </span>
+                <FileThumbnail file={file} />
                 <span className="file-row-copy">
                   <strong>{file.name}</strong>
                   <span>
@@ -912,6 +983,9 @@ function FileList({
                   </span>
                 </span>
                 <span className="file-row-kind">{getKindLabel(file.kind)}</span>
+                <span className="file-row-size">
+                  {file.size === null ? "—" : formatBytes(file.size)}
+                </span>
                 <span className="file-row-chevron" aria-hidden="true">
                   ›
                 </span>

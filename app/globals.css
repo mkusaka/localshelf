@@ -789,6 +789,17 @@ kbd {
     sans-serif;
   letter-spacing: 0.04em;
 }
+.file-type-has-preview {
+  overflow: hidden;
+  background: #edf4ef;
+}
+.file-type-has-preview img,
+.file-type-has-preview video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
 .file-type-image {
   background: #f9e0d6;
   color: #c25b3b;
@@ -833,6 +844,12 @@ kbd {
 .file-row-kind {
   color: #a0aaa4;
   font-size: 10px;
+}
+.file-row-size {
+  color: #7f8d85;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 .file-row-chevron {
   color: #adb9b2;
@@ -982,13 +999,27 @@ kbd {
   background: #eef4ef;
 }
 .preview-canvas img,
-.preview-canvas video {
+.preview-canvas > video {
   width: 100%;
   height: 100%;
   object-fit: contain;
 }
-.preview-canvas video {
+.preview-canvas.preview-video {
+  height: auto;
+  min-height: 220px;
   background: #121b17;
+}
+.preview-canvas > video {
+  background: #121b17;
+}
+.preview-canvas [data-media-player].video-preview-player {
+  --video-aspect-ratio: 16 / 9;
+  --video-width-ratio: 1.777778;
+  --video-max-height: min(35vh, 260px);
+  width: min(100%, calc(var(--video-max-height) * var(--video-width-ratio)));
+  max-width: 100%;
+  aspect-ratio: var(--video-aspect-ratio);
+  flex: 0 1 auto;
 }
 .preview-canvas object {
   width: 100%;
@@ -1358,6 +1389,7 @@ kbd {
   .mobile-preview-dialog .preview-canvas,
   .mobile-preview-dialog .preview-canvas > img,
   .mobile-preview-dialog .preview-canvas > video,
+  .mobile-preview-dialog .preview-canvas > [data-media-player],
   .mobile-preview-dialog .preview-canvas > object {
     min-width: 0;
     max-width: 100%;
@@ -1365,6 +1397,14 @@ kbd {
   .preview-canvas {
     height: min(72vw, 360px);
     margin-top: 18px;
+  }
+  .preview-canvas.preview-video {
+    height: auto;
+    min-height: 220px;
+  }
+  .preview-canvas [data-media-player].video-preview-player {
+    --video-max-height: min(54vh, 420px);
+    --video-max-height: min(54dvh, 420px);
   }
   .preview-empty {
     min-height: 180px;
