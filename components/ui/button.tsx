@@ -19,6 +19,7 @@ function Button({
   React.RefAttributes<HTMLButtonElement> &
   VariantProps<typeof buttonVariants> & {
     className?: string;
+    title?: string;
   }) {
   return (
     <ButtonPrimitive
