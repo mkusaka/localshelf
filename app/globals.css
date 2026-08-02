@@ -1241,9 +1241,13 @@ kbd {
   }
   .mobile-filter-pills {
     display: flex;
+    width: 100%;
+    max-width: 100%;
     min-width: 0;
+    flex-wrap: nowrap;
     margin-top: 13px;
     overflow-x: auto;
+    overflow-y: hidden;
     scrollbar-width: none;
   }
   .mobile-filter-pills::-webkit-scrollbar {
@@ -1336,9 +1340,11 @@ kbd {
     position: fixed;
     inset: 0;
     width: 100%;
-    max-width: none;
+    max-width: 100dvw;
+    min-width: 0;
     height: 100dvh;
     max-height: 100dvh;
+    overflow-x: hidden;
     overflow-y: auto;
     padding: 24px 18px 42px;
     border: 0;
@@ -1347,6 +1353,14 @@ kbd {
     --tw-translate-x: 0;
     --tw-translate-y: 0;
     transform: none;
+  }
+  .mobile-preview-dialog > [data-slot="dialog"],
+  .mobile-preview-dialog .preview-canvas,
+  .mobile-preview-dialog .preview-canvas > img,
+  .mobile-preview-dialog .preview-canvas > video,
+  .mobile-preview-dialog .preview-canvas > object {
+    min-width: 0;
+    max-width: 100%;
   }
   .preview-canvas {
     height: min(72vw, 360px);
