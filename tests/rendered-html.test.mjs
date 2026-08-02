@@ -44,6 +44,9 @@ test("keeps the local file surface and URL routing in the client app", async () 
   assert.match(page, /Remove from library/);
   assert.match(page, /onDoubleClick/);
   assert.match(page, /resetPanelWidth/);
+  assert.match(page, /const handleBrandPress = \(\) =>/);
+  assert.match(page, /if \(activeDirectory\) \{[\s\S]*selectFolder\(""\);/);
+  assert.match(page, /onPress=\{handleBrandPress\}/);
   assert.match(page, /dir: undefined, file: undefined/);
   assert.match(route, /validateSearch/);
   assert.match(route, /folder/);
