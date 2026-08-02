@@ -149,6 +149,3 @@ vite.config.ts.timestamp-*
 .DS_Store
 next-env.d.ts
 .vercel
-
-# TanStack Router generated output
-src/routeTree.gen.ts
