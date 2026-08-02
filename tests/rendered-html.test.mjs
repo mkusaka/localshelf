@@ -85,7 +85,7 @@ test("keeps the local file surface and URL routing in the client app", async () 
   assert.match(packageJson, /"deploy": "pnpm build && wrangler deploy --config wrangler\.jsonc"/);
   assert.match(packageJson, /@tanstack\/react-router/);
   assert.match(packageJson, /react-aria-components/);
-  assert.match(packageJson, /"wrangler": "\^4\.118\.0"/);
+  assert.match(packageJson, /"wrangler": "\^4\.114\.0"/);
   assert.match(wranglerConfig, /"directory": "\.\/dist"/);
   assert.match(wranglerConfig, /"not_found_handling": "single-page-application"/);
   assert.match(indexHtml, /lang="en"/);
