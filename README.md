@@ -38,6 +38,14 @@ pnpm deploy
 The app only reads local files in the browser. Deploying the app does not
 upload the folders selected by a user.
 
+## Install as an app
+
+LocalShelf can be installed from a supported browser after it is served over
+HTTPS. Its application shell is cached for offline launch and updated
+automatically when a new version is deployed. Local folder access remains
+browser-controlled, so select the folder again after a reload when the browser
+does not retain permission.
+
 ## Features
 
 - Recursive folder listing
@@ -50,6 +58,7 @@ upload the folders selected by a user.
 - URL state for the selected folder name, file path, search query, and filter
 - Responsive layout that keeps the preview available on mobile
 - `webkitdirectory` fallback for browsers without File System Access API
+- Installable PWA with offline app-shell caching and automatic updates
 
 The URL describes the current view, but never contains an absolute OS path or
 the contents of a local file. Reloading a page may require choosing the folder

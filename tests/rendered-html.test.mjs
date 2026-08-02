@@ -11,11 +11,21 @@ async function readProjectFile(path) {
 }
 
 test("builds the LocalShelf static shell", async () => {
-  const html = await readProjectFile("dist/index.html");
+  const [html, manifest, serviceWorker] = await Promise.all([
+    readProjectFile("dist/index.html"),
+    readProjectFile("dist/manifest.webmanifest"),
+    readProjectFile("dist/sw.js"),
+  ]);
 
   assert.match(html, /<title>LocalShelf — Private local file viewer<\/title>/i);
   assert.match(html, /id="root"/);
   assert.match(html, /src="\/assets\/index-[^"]+\.js"/);
+  assert.match(html, /rel="manifest"/);
+  assert.match(manifest, /"name":"LocalShelf"/);
+  assert.match(manifest, /"display":"standalone"/);
+  assert.match(manifest, /"src":"\/pwa-icon-192\.png"/);
+  assert.match(manifest, /"src":"\/pwa-icon-512\.png"/);
+  assert.match(serviceWorker, /precacheAndRoute/);
 });
 
 test("keeps the local file surface and URL routing in the client app", async () => {
@@ -65,4 +75,15 @@ test("keeps the local file surface and URL routing in the client app", async () 
   assert.match(wranglerConfig, /"not_found_handling": "single-page-application"/);
   assert.match(indexHtml, /lang="en"/);
   assert.doesNotMatch(page, /フォルダ|ファイル|画像|動画|音声|文書|読み込み/);
+});
+
+test("configures PWA generation", async () => {
+  const [packageJson, viteConfig] = await Promise.all([
+    readProjectFile("package.json"),
+    readProjectFile("vite.config.ts"),
+  ]);
+
+  assert.match(packageJson, /"vite-plugin-pwa": "\^1\.3\.0"/);
+  assert.match(viteConfig, /VitePWA/);
+  assert.match(viteConfig, /registerType: "autoUpdate"/);
 });
