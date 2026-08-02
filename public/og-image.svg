@@ -1,0 +1,48 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F7F9F6" />
+      <stop offset="1" stop-color="#E7F2F2" />
+    </linearGradient>
+    <linearGradient id="accent" x1="735" y1="92" x2="1083" y2="523" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0C79D8" />
+      <stop offset="1" stop-color="#68C4FF" />
+    </linearGradient>
+    <filter id="shadow" x="694" y="58" width="418" height="514" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="18" stdDeviation="20" flood-color="#0B3150" flood-opacity="0.14" />
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" rx="32" fill="url(#background)" />
+  <circle cx="1090" cy="-6" r="210" fill="#D9EEFF" fill-opacity="0.7" />
+  <circle cx="1058" cy="614" r="178" fill="#D6F0E9" fill-opacity="0.8" />
+
+  <g transform="translate(104 145) scale(8)">
+    <path d="M22 19.2727C22 20.779 20.779 22 19.2727 22H14.7273C13.221 22 12 20.779 12 19.2727V12H19.2727C20.779 12 22 13.221 22 14.7273V19.2727Z" fill="#68C4FF" />
+    <path d="M20 2C21.1046 2 22 2.89543 22 4V7C22 8.10457 21.1046 9 20 9H17C15.8954 9 15 8.10457 15 7V4C15 2.89543 15.8954 2 17 2H20Z" fill="#0C79D8" />
+    <path d="M7 15C8.10457 15 9 15.8954 9 17V20C9 21.1046 8.10457 22 7 22H4C2.89543 22 2 21.1046 2 20V17C2 15.8954 2.89543 15 4 15H7Z" fill="#0C79D8" />
+    <path d="M12 12H4.72727C3.22104 12 2 10.779 2 9.27273V4.72727C2 3.22104 3.22104 2 4.72727 2H9.27273C10.779 2 12 3.22104 12 4.72727V12Z" fill="#2E9EFF" />
+  </g>
+
+  <text x="104" y="384" fill="#102A43" font-family="Helvetica-Bold" font-size="68">LocalShelf</text>
+  <text x="108" y="442" fill="#526777" font-family="Helvetica" font-size="28">Private local file viewer</text>
+  <text x="108" y="508" fill="#0C79D8" font-family="Helvetica-Bold" font-size="22">FILES STAY ON THIS DEVICE</text>
+
+  <g filter="url(#shadow)">
+    <rect x="735" y="92" width="334" height="430" rx="24" fill="white" />
+    <rect x="735" y="92" width="334" height="72" rx="24" fill="#102A43" />
+    <rect x="735" y="140" width="334" height="24" fill="#102A43" />
+    <circle cx="770" cy="128" r="9" fill="#68C4FF" />
+    <rect x="792" y="118" width="102" height="19" rx="9.5" fill="#D9E7F1" fill-opacity="0.85" />
+    <rect x="931" y="117" width="102" height="21" rx="10.5" fill="#244B67" />
+    <rect x="767" y="198" width="270" height="48" rx="12" fill="#F0F6F7" />
+    <rect x="783" y="214" width="127" height="16" rx="8" fill="#B6D3D8" />
+    <rect x="767" y="270" width="78" height="78" rx="16" fill="#D9EEFF" />
+    <rect x="859" y="270" width="78" height="78" rx="16" fill="#E3F3EB" />
+    <rect x="951" y="270" width="86" height="78" rx="16" fill="#FFF1D8" />
+    <rect x="786" y="367" width="216" height="13" rx="6.5" fill="#C7D9E4" />
+    <rect x="786" y="393" width="159" height="10" rx="5" fill="#E0EAEF" />
+    <rect x="767" y="438" width="120" height="10" rx="5" fill="#E0EAEF" />
+    <rect x="913" y="433" width="124" height="22" rx="11" fill="url(#accent)" />
+  </g>
+</svg>

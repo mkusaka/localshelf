@@ -1,7 +1,7 @@
 /* global URL */
 
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import test from "node:test";
 
 const projectRoot = new URL("../", import.meta.url);
@@ -11,13 +11,28 @@ async function readProjectFile(path) {
 }
 
 test("builds the LocalShelf static shell", async () => {
-  const [html, manifest, serviceWorker] = await Promise.all([
+  const [html, manifest, serviceWorker, ogImage] = await Promise.all([
     readProjectFile("dist/index.html"),
     readProjectFile("dist/manifest.webmanifest"),
     readProjectFile("dist/sw.js"),
+    stat(new URL("dist/og-image.png", projectRoot)),
   ]);
 
   assert.match(html, /<title>LocalShelf — Private local file viewer<\/title>/i);
+  assert.match(
+    html,
+    /<meta property="og:title" content="LocalShelf — Private local file viewer" \/>/i,
+  );
+  assert.match(html, /<meta property="og:type" content="website" \/>/i);
+  assert.match(
+    html,
+    /<meta property="og:url" content="https:\/\/localshelf\.polyfill\.workers\.dev\/" \/>/i,
+  );
+  assert.match(
+    html,
+    /<meta property="og:image" content="https:\/\/localshelf\.polyfill\.workers\.dev\/og-image\.png" \/>/i,
+  );
+  assert.ok(ogImage.size > 0);
   assert.match(html, /id="root"/);
   assert.match(html, /src="\/assets\/index-[^"]+\.js"/);
   assert.match(html, /rel="manifest"/);
@@ -74,6 +89,11 @@ test("keeps the local file surface and URL routing in the client app", async () 
   assert.match(wranglerConfig, /"directory": "\.\/dist"/);
   assert.match(wranglerConfig, /"not_found_handling": "single-page-application"/);
   assert.match(indexHtml, /lang="en"/);
+  assert.match(indexHtml, /name="description"/);
+  assert.match(indexHtml, /property="og:description"/);
+  assert.match(indexHtml, /property="og:image:alt"/);
+  assert.match(indexHtml, /name="twitter:card" content="summary_large_image"/);
+  assert.match(indexHtml, /og-image\.png/);
   assert.doesNotMatch(page, /フォルダ|ファイル|画像|動画|音声|文書|読み込み/);
 });
 
