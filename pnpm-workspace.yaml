@@ -8,6 +8,9 @@ trustPolicyExclude:
   - "semver@6.3.1"
   - "@trickfilm400/rollup-plugin-off-main-thread@3.0.0-pre1"
 
+overrides:
+  "@modelcontextprotocol/sdk@1.29.0>@hono/node-server": 2.0.12
+
 allowBuilds:
   esbuild: true
   sharp: true
