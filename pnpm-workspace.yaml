@@ -9,7 +9,7 @@ trustPolicyExclude:
   - "@trickfilm400/rollup-plugin-off-main-thread@3.0.0-pre1"
 
 overrides:
-  "@modelcontextprotocol/sdk@1.29.0>@hono/node-server": 2.0.12
+  "@modelcontextprotocol/sdk@1.29.0>@hono/node-server": 2.1.0
 
 allowBuilds:
   esbuild: true
